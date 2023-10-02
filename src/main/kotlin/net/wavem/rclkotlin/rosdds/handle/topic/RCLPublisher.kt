@@ -1,6 +1,5 @@
 package net.wavem.rclkotlin.rosdds.handle.topic
 
-import net.wavem.rclkotlin.rosdds.handle.RCLKotlin
 import net.wavem.rclkotlin.rosdds.infra.DDSQoS
 import net.wavem.rclkotlin.rosdds.infra.DDSSupport
 import net.wavem.rclkotlin.rosidl.infra.RCLMessage
