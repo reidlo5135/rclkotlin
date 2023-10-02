@@ -1,4 +1,4 @@
-package net.wavem.rclkotlin.rosidl.record.std_msgs
+package net.wavem.rclkotlin.rosidl.message.std_msgs
 
 import net.wavem.rclkotlin.rosidl.infra.RCLMessage
 import net.wavem.rclkotlin.rosidl.infra.RCLTypeSupport
