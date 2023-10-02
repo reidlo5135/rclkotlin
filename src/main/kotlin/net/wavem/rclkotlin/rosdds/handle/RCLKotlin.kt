@@ -14,6 +14,7 @@ open class RCLKotlin {
         return rclPublisher
     }
 
+
     fun <T : RCLMessage> createSubscription(topic : String, messageType: String) : RCLSubscription<T> {
         val rclSubscription : RCLSubscription<T> = RCLSubscription<T>()
         rclSubscription.registerSubscription(topic, messageType)
@@ -24,9 +25,9 @@ open class RCLKotlin {
     }
 }
 
-fun main(args : Array<String>) {
+fun publishingTest() {
     val rclKotlin : RCLKotlin = RCLKotlin()
-    val rclPublisher : RCLPublisher<net.wavem.rclkotlin.rosidl.message.std_msgs.String> = rclKotlin.createPublisher<net.wavem.rclkotlin.rosidl.message.std_msgs.String>("/chatter", "std_msgs/String")
+    val rclPublisher : RCLPublisher<net.wavem.rclkotlin.rosidl.message.std_msgs.String> = rclKotlin.createPublisher("/chatter", "std_msgs/String")
 
     val string : net.wavem.rclkotlin.rosidl.message.std_msgs.String = net.wavem.rclkotlin.rosidl.message.std_msgs.String("hi chatter")
 
@@ -38,4 +39,23 @@ fun main(args : Array<String>) {
         )
         Thread.sleep(500)
     }
+}
+
+fun subscriptionTest() {
+    val rclKotlin : RCLKotlin = RCLKotlin()
+    val topic : String = "/chatter"
+    val messageType : String = "std_msgs/String"
+    val rclSubscription : RCLSubscription<net.wavem.rclkotlin.rosidl.message.std_msgs.String> = rclKotlin.createSubscription(topic, messageType)
+
+    rclSubscription.getDataObservable().subscribe() { it ->
+        if (it != null) {
+            val stringCallback : net.wavem.rclkotlin.rosidl.message.std_msgs.String = net.wavem.rclkotlin.rosidl.message.std_msgs.String.read(it)
+            println("$topic callback : $stringCallback")
+        }
+    }
+}
+
+fun main(args : Array<String>) {
+//    publishingTest()
+    subscriptionTest()
 }
