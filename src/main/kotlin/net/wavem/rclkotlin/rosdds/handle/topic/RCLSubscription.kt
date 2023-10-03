@@ -1,6 +1,7 @@
 package net.wavem.rclkotlin.rosdds.handle.topic
 
 import id.jros2client.impl.rmw.RmwConstants
+import net.wavem.rclkotlin.rosdds.infra.DDSQoS
 import java.util.concurrent.Flow.Subscriber
 import java.util.concurrent.Flow.Subscription
 import net.wavem.rclkotlin.rosdds.infra.DDSSupport
@@ -29,7 +30,7 @@ class RCLSubscription<T : RCLMessage> {
         val ddsTopic : String = ddsSupport.qualifyTopic(topic)
         val ddsMessageType : String = ddsSupport.qualifyMessageType(messageType)
 
-        ddsClient.subscribe(ddsTopic, ddsMessageType, RmwConstants.DEFAULT_SUBSCRIBER_QOS, object : Subscriber<RtpsTalkDataMessage> {
+        ddsClient.subscribe(ddsTopic, ddsMessageType, DDSQoS.DEFAULT_SUBSCRIBER_QOS, object : Subscriber<RtpsTalkDataMessage> {
             private lateinit var subscription : Subscription
 
             override fun onSubscribe(subscription : Subscription) {
