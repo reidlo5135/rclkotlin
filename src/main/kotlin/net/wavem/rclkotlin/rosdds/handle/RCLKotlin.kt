@@ -3,6 +3,7 @@ package net.wavem.rclkotlin.rosdds.handle
 import net.wavem.rclkotlin.rosdds.handle.topic.RCLPublisher
 import net.wavem.rclkotlin.rosdds.handle.topic.RCLSubscription
 import net.wavem.rclkotlin.rosidl.infra.RCLMessage
+import net.wavem.rclkotlin.rosidl.message.sensor_msgs.NavSatFix
 
 open class RCLKotlin {
     fun <T : RCLMessage> createPublisher(topic : String, messageType : String) : RCLPublisher<T> {
@@ -13,7 +14,6 @@ open class RCLKotlin {
 
         return rclPublisher
     }
-
 
     fun <T : RCLMessage> createSubscription(topic : String, messageType: String) : RCLSubscription<T> {
         val rclSubscription : RCLSubscription<T> = RCLSubscription<T>()
@@ -43,14 +43,14 @@ fun publishingTest() {
 
 fun subscriptionTest() {
     val rclKotlin : RCLKotlin = RCLKotlin()
-    val topic : String = "/chatter"
-    val messageType : String = "std_msgs/String"
-    val rclSubscription : RCLSubscription<net.wavem.rclkotlin.rosidl.message.std_msgs.String> = rclKotlin.createSubscription(topic, messageType)
+    val topic : String = "/gps/fix"
+    val messageType : String = "sensor_msgs/NavSatFix"
+    val rclSubscription : RCLSubscription<NavSatFix> = rclKotlin.createSubscription(topic, messageType)
 
     rclSubscription.getDataObservable().subscribe() { it ->
         if (it != null) {
-            val stringCallback : net.wavem.rclkotlin.rosidl.message.std_msgs.String = net.wavem.rclkotlin.rosidl.message.std_msgs.String.read(it)
-            println("$topic callback : $stringCallback")
+            val gps : NavSatFix = NavSatFix.read(it)
+            println("$topic callback : $gps")
         }
     }
 }

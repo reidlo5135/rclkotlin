@@ -1,6 +1,5 @@
 package net.wavem.rclkotlin.rosdds.handle.topic
 
-import id.jros2client.impl.rmw.RmwConstants
 import net.wavem.rclkotlin.rosdds.infra.DDSQoS
 import java.util.concurrent.Flow.Subscriber
 import java.util.concurrent.Flow.Subscription
