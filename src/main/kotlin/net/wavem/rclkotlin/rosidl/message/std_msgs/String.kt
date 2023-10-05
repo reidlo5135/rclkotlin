@@ -1,31 +1,25 @@
 package net.wavem.rclkotlin.rosidl.message.std_msgs
 
-import net.wavem.rclkotlin.rosidl.infra.RCLMessage
-import net.wavem.rclkotlin.rosidl.infra.RCLTypeSupport
+import id.jrosmessages.Message
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
-data class String(
-    val data : kotlin.String
-) : RCLMessage() {
+class String() : Message {
+    var data : kotlin.String = ""
 
-    companion object : RCLTypeSupport<String> {
-        fun build(data : String) : String {
-            return String(data.data)
-        }
+    fun write() : ByteArray {
+        val dataLen : Int = this.data.length + 1
+        val buf : ByteBuffer = ByteBuffer.allocate(Integer.BYTES * 2 + dataLen)
+        buf.order(ByteOrder.LITTLE_ENDIAN)
+        buf.putInt(dataLen)
+        buf.put(this.data.toByteArray())
 
-        fun write(data : String) : ByteArray {
-            val stringData : kotlin.String = data.data
-            val stringDataLen : Int = stringData.length + 1
-            val buf : ByteBuffer = ByteBuffer.allocate(Integer.BYTES * 2 + stringDataLen)
-            buf.order(ByteOrder.LITTLE_ENDIAN)
-            buf.putInt(stringDataLen)
-            buf.put(stringData.toByteArray())
+        return buf.array()
+    }
 
-            return buf.array()
-        }
-
-        override fun read(data : ByteArray) : String {
+    companion object {
+        @JvmStatic
+        fun read(data : ByteArray) : String {
             val buf : ByteBuffer = ByteBuffer.wrap(data)
             buf.order(ByteOrder.LITTLE_ENDIAN)
 
@@ -34,9 +28,10 @@ data class String(
 
             while (len-- > 0) strData += Char(buf.get().toUShort())
 
-            return String(
-                data = strData
-            )
+            val string : String = String()
+            string.data = strData
+
+            return string
         }
     }
 }

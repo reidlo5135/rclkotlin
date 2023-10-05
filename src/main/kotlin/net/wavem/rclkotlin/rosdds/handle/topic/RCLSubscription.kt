@@ -1,6 +1,6 @@
 package net.wavem.rclkotlin.rosdds.handle.topic
 
-import id.jros2client.impl.rmw.RmwConstants
+import id.jrosmessages.Message
 import net.wavem.rclkotlin.rosdds.infra.DDSQoS
 import java.util.concurrent.Flow.Subscriber
 import java.util.concurrent.Flow.Subscription
@@ -12,7 +12,7 @@ import pinorobotics.rtpstalk.messages.RtpsTalkDataMessage
 import rx.Observable
 import rx.subjects.PublishSubject
 
-class RCLSubscription<T : RCLMessage> {
+class RCLSubscription<T : Message> {
     private val ddsClient : RtpsTalkClient = RtpsTalkClient(
         RtpsTalkConfiguration.Builder()
             .networkInterface(DDSSupport.DDS_NETWORK_INTERFACE_TYPE)
