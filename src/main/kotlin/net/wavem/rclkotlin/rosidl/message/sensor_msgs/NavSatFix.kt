@@ -1,27 +1,46 @@
 package net.wavem.rclkotlin.rosidl.message.sensor_msgs
 
-import net.wavem.rclkotlin.rosidl.infra.RCLMessage
-import net.wavem.rclkotlin.rosidl.infra.RCLTypeSupport
+import id.jrosmessages.Message
 import net.wavem.rclkotlin.rosidl.message.std_msgs.Header
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
-data class NavSatFix(
-    val COVARIANCE_TYPE_UNKNOWN : Byte = 0,
-    val COVARIANCE_TYPE_APPROXIMATED : Byte = 1,
-    val COVARIANCE_TYPE_DIAGONAL_KNOWN : Byte = 2,
-    val COVARIANCE_TYPE_KNOWN : Byte = 3,
-    val header : Header,
-    val status : NavSatStatus,
-    val latitude : Double,
-    val longitude : Double,
-    val altitude : Double,
-    val position_covariance : DoubleArray = DoubleArray(9),
-    val position_covariance_type : UByte
-) : RCLMessage() {
+class NavSatFix() : Message {
 
-    companion object : RCLTypeSupport<NavSatFix> {
-        override fun read(data : ByteArray) : NavSatFix {
+    val COVARIANCE_TYPE_UNKNOWN : Byte = 0
+    val COVARIANCE_TYPE_APPROXIMATED : Byte = 1
+    val COVARIANCE_TYPE_DIAGONAL_KNOWN : Byte = 2
+    val COVARIANCE_TYPE_KNOWN : Byte = 3
+
+    var header : Header = Header()
+    var status : NavSatStatus = NavSatStatus()
+    var latitude : Double = 0.0
+    var longitude : Double = 0.0
+    var altitude : Double = 0.0
+    var position_covariance : DoubleArray = DoubleArray(9)
+    var position_covariance_type : UByte  = 0u
+
+    constructor(
+        header : Header,
+        status : NavSatStatus,
+        latitude : Double,
+        longitude : Double,
+        altitude : Double,
+        position_covariance : DoubleArray,
+        position_covariance_type : UByte
+    ) : this() {
+        this.header = header
+        this.status = status
+        this.latitude = latitude
+        this.longitude = longitude
+        this.altitude = altitude
+        this.position_covariance = position_covariance
+        this.position_covariance_type = position_covariance_type
+    }
+
+    companion object {
+        @JvmStatic
+        fun read(data : ByteArray) : NavSatFix {
             val buf : ByteBuffer = ByteBuffer.wrap(data)
             buf.order(ByteOrder.LITTLE_ENDIAN)
 

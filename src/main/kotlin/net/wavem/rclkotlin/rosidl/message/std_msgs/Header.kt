@@ -1,18 +1,24 @@
 package net.wavem.rclkotlin.rosidl.message.std_msgs
 
+import id.jrosmessages.Message
 import net.wavem.rclkotlin.rosidl.infra.RCLMessage
 import net.wavem.rclkotlin.rosidl.infra.RCLTypeSupport
 import net.wavem.rclkotlin.rosidl.message.builtin_interfaces.Time
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
-data class Header(
-    val stamp : Time,
-    val frame_id : kotlin.String
-) : RCLMessage() {
+class Header() : Message {
+    var stamp : Time = Time()
+    var frame_id : kotlin.String = ""
 
-    companion object : RCLTypeSupport<Header> {
-        override fun read(data : ByteArray) : Header {
+    constructor(stamp : Time, frame_id : kotlin.String) : this() {
+        this.stamp = stamp
+        this.frame_id = frame_id
+    }
+
+    companion object {
+        @JvmStatic
+        fun read(data : ByteArray) : Header {
             val buf : ByteBuffer = ByteBuffer.wrap(data)
             buf.order(ByteOrder.LITTLE_ENDIAN)
 
