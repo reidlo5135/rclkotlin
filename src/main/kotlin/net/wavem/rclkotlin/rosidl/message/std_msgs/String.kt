@@ -1,11 +1,17 @@
 package net.wavem.rclkotlin.rosidl.message.std_msgs
 
 import id.jrosmessages.Message
+import id.xfunction.XJson
+import net.wavem.rclkotlin.rosidl.infra.RCLTypeSupport
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
 class String() : Message {
     var data : kotlin.String = ""
+
+    constructor(data : kotlin.String) : this() {
+        this.data = data
+    }
 
     fun write() : ByteArray {
         val dataLen : Int = this.data.length + 1
@@ -17,9 +23,15 @@ class String() : Message {
         return buf.array()
     }
 
-    companion object {
+    override fun toString() : kotlin.String {
+        return XJson.asString(
+            "data", this.data
+        )
+    }
+
+    companion object : RCLTypeSupport<String> {
         @JvmStatic
-        fun read(data : ByteArray) : String {
+        override fun read(data : ByteArray) : String {
             val buf : ByteBuffer = ByteBuffer.wrap(data)
             buf.order(ByteOrder.LITTLE_ENDIAN)
 
@@ -28,10 +40,9 @@ class String() : Message {
 
             while (len-- > 0) strData += Char(buf.get().toUShort())
 
-            val string : String = String()
-            string.data = strData
-
-            return string
+            return String(
+                data = strData
+            )
         }
     }
 }

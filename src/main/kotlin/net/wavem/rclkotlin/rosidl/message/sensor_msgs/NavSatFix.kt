@@ -1,6 +1,8 @@
 package net.wavem.rclkotlin.rosidl.message.sensor_msgs
 
 import id.jrosmessages.Message
+import id.xfunction.XJson
+import net.wavem.rclkotlin.rosidl.infra.RCLTypeSupport
 import net.wavem.rclkotlin.rosidl.message.std_msgs.Header
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -38,9 +40,34 @@ class NavSatFix() : Message {
         this.position_covariance_type = position_covariance_type
     }
 
-    companion object {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as NavSatFix
+
+        return position_covariance.contentEquals(other.position_covariance)
+    }
+
+    override fun hashCode(): Int {
+        return position_covariance.contentHashCode()
+    }
+
+    override fun toString() : String {
+        return XJson.asString(
+            "header", this.header.toString(),
+            "status", this.status.toString(),
+            "latitude", this.latitude,
+            "longitude", this.longitude,
+            "altitude", this.altitude,
+            "position_covariance", this.position_covariance,
+            "position_covariance_type", this.position_covariance_type
+        )
+    }
+
+    companion object : RCLTypeSupport<NavSatFix> {
         @JvmStatic
-        fun read(data : ByteArray) : NavSatFix {
+        override fun read(data : ByteArray) : NavSatFix {
             val buf : ByteBuffer = ByteBuffer.wrap(data)
             buf.order(ByteOrder.LITTLE_ENDIAN)
 
@@ -73,18 +100,5 @@ class NavSatFix() : Message {
                 position_covariance_type = position_covariance_type
             )
         }
-    }
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as NavSatFix
-
-        return position_covariance.contentEquals(other.position_covariance)
-    }
-
-    override fun hashCode(): Int {
-        return position_covariance.contentHashCode()
     }
 }

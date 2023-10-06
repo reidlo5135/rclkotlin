@@ -1,6 +1,8 @@
 package net.wavem.rclkotlin.rosidl.infra
 
-interface RCLTypeSupport<T> {
+import id.jrosmessages.Message
 
-    fun read(data : ByteArray) : T
+interface RCLTypeSupport<M : Message> {
+
+    fun read(data : ByteArray) : M
 }

@@ -1,15 +1,17 @@
-package net.wavem.rclkotlin.rosdds.handle.topic
+package net.wavem.rclkotlin.rosdds.topic
 
 import id.jrosmessages.Message
 import net.wavem.rclkotlin.rosdds.infra.DDSQoS
 import net.wavem.rclkotlin.rosdds.infra.DDSSupport
-import net.wavem.rclkotlin.rosidl.infra.RCLMessage
 import pinorobotics.rtpstalk.RtpsTalkClient
 import pinorobotics.rtpstalk.RtpsTalkConfiguration
 import pinorobotics.rtpstalk.messages.RtpsTalkDataMessage
 import java.util.concurrent.SubmissionPublisher
+import kotlin.reflect.KClass
 
-class RCLPublisher<T : Message> {
+class RCLPublisher<M : Message>(
+    private val messageType : KClass<M>
+) {
     private val ddsClient : RtpsTalkClient = RtpsTalkClient(
         RtpsTalkConfiguration.Builder()
             .networkInterface(DDSSupport.DDS_NETWORK_INTERFACE_TYPE)
@@ -19,7 +21,7 @@ class RCLPublisher<T : Message> {
     private val ddsSupport : DDSSupport = DDSSupport()
     private val ddsPublisher : SubmissionPublisher<RtpsTalkDataMessage> = SubmissionPublisher<RtpsTalkDataMessage>()
 
-    fun registerPublisher(topic : String, messageType : String) {
+    fun registerPublisher(topic : String) {
         val ddsTopic : String = ddsSupport.qualifyTopic(topic)
         val ddsMessageType : String = ddsSupport.qualifyMessageType(messageType)
 

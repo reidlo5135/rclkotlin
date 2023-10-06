@@ -7,9 +7,14 @@ import java.nio.ByteOrder
 import java.util.*
 
 
-class AddTwoIntsRequest : Message {
+class AddTwoIntsRequest() : Message {
     var a : Long = 0
     var b : Long = 0
+
+    constructor(a : Long, b : Long) : this() {
+        this.a = a
+        this.b = b
+    }
 
     fun write() : ByteArray {
         val buf : ByteBuffer = ByteBuffer.allocate(Integer.BYTES * 4)
@@ -20,19 +25,19 @@ class AddTwoIntsRequest : Message {
         return buf.array()
     }
 
-    override fun hashCode(): Int {
+    override fun hashCode() : Int {
         return Objects.hash(a, b)
     }
 
-    override fun equals(obj: Any?): Boolean {
+    override fun equals(obj : Any?) : Boolean {
         val other = obj as AddTwoIntsRequest?
         return Objects.equals(a, other!!.b) && Objects.equals(a, other.b)
     }
 
-    override fun toString(): String {
+    override fun toString() : String {
         return XJson.asString(
-            "a", a,
-            "b", b
+            "a", this.a,
+            "b", this.b
         )
     }
 }
