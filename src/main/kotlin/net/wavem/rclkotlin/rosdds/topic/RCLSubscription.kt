@@ -1,18 +1,20 @@
-package net.wavem.rclkotlin.rosdds.handle.topic
+package net.wavem.rclkotlin.rosdds.topic
 
 import id.jrosmessages.Message
 import net.wavem.rclkotlin.rosdds.infra.DDSQoS
 import java.util.concurrent.Flow.Subscriber
 import java.util.concurrent.Flow.Subscription
 import net.wavem.rclkotlin.rosdds.infra.DDSSupport
-import net.wavem.rclkotlin.rosidl.infra.RCLMessage
 import pinorobotics.rtpstalk.RtpsTalkClient
 import pinorobotics.rtpstalk.RtpsTalkConfiguration
 import pinorobotics.rtpstalk.messages.RtpsTalkDataMessage
 import rx.Observable
 import rx.subjects.PublishSubject
+import kotlin.reflect.KClass
 
-class RCLSubscription<T : Message> {
+class RCLSubscription<M : Message>(
+    private val messageType : KClass<M>
+) {
     private val ddsClient : RtpsTalkClient = RtpsTalkClient(
         RtpsTalkConfiguration.Builder()
             .networkInterface(DDSSupport.DDS_NETWORK_INTERFACE_TYPE)
@@ -26,7 +28,7 @@ class RCLSubscription<T : Message> {
         return dataObservable
     }
 
-    internal fun registerSubscription(topic : String, messageType : String) {
+    internal fun registerSubscription(topic : String) {
         val ddsTopic : String = ddsSupport.qualifyTopic(topic)
         val ddsMessageType : String = ddsSupport.qualifyMessageType(messageType)
 

@@ -1,7 +1,7 @@
 package net.wavem.rclkotlin.rosidl.message.sensor_msgs
 
 import id.jrosmessages.Message
-import net.wavem.rclkotlin.rosidl.infra.RCLMessage
+import id.xfunction.XJson
 import net.wavem.rclkotlin.rosidl.infra.RCLTypeSupport
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -24,9 +24,16 @@ class NavSatStatus() : Message {
         this.service = service
     }
 
-    companion object {
+    override fun toString() : String {
+        return XJson.asString(
+            "status", this.status,
+            "service", this.service
+        )
+    }
+
+    companion object : RCLTypeSupport<NavSatStatus> {
         @JvmStatic
-        fun read(data : ByteArray) : NavSatStatus {
+        override fun read(data : ByteArray) : NavSatStatus {
             val buf : ByteBuffer = ByteBuffer.wrap(data)
             buf.order(ByteOrder.LITTLE_ENDIAN)
 
