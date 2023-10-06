@@ -1,12 +1,15 @@
 package net.wavem.rclkotlin.rosdds
 
+import id.jros2messages.MessageSerializationUtils
 import net.wavem.rclkotlin.rosdds.service.RCLServiceClient
 import net.wavem.rclkotlin.rosdds.service.RCLServiceServer
 import net.wavem.rclkotlin.rosdds.topic.RCLPublisher
 import net.wavem.rclkotlin.rosdds.topic.RCLSubscription
+import net.wavem.rclkotlin.rosidl.infra.RCLMessageSerialization
 import net.wavem.rclkotlin.rosidl.message.example_interfaces.AddTwoIntsRequest
 import net.wavem.rclkotlin.rosidl.message.example_interfaces.AddTwoIntsResponse
 import net.wavem.rclkotlin.rosidl.message.sensor_msgs.NavSatFix
+import net.wavem.rclkotlin.rosidl.message.sensor_msgs.NavSatStatus
 
 class RCLKotlinTest {
     fun publishingTest() {
@@ -24,12 +27,26 @@ class RCLKotlinTest {
 
     fun subscriptionTest() {
         val rclKotlin : RCLKotlin = RCLKotlin()
-        val topic : String = "/gps/fix"
-        val rclSubscription : RCLSubscription<NavSatFix> = rclKotlin.createSubscription(topic, NavSatFix::class)
+//        val topic : String = "/chatter"
+//        val rclSubscription : RCLSubscription<net.wavem.rclkotlin.rosidl.message.std_msgs.String> =
+//            rclKotlin.createSubscription(topic, net.wavem.rclkotlin.rosidl.message.std_msgs.String::class)
+//
+//        rclSubscription.getDataObservable().subscribe { it ->
+//            if (it != null) {
+//                val d : RCLMessageSerialization = RCLMessageSerialization()
+//                val callback : net.wavem.rclkotlin.rosidl.message.std_msgs.String? = d.read(it)
+//                println("$topic callback : $callback")
+//            }
+//        }
+
+        val topic : String = "/status"
+        val rclSubscription : RCLSubscription<NavSatStatus> =
+            rclKotlin.createSubscription(topic, NavSatStatus::class)
 
         rclSubscription.getDataObservable().subscribe { it ->
             if (it != null) {
-                val callback : NavSatFix = NavSatFix.read(it)
+                val d : RCLMessageSerialization = RCLMessageSerialization()
+                val callback : NavSatStatus? = d.read(it)
                 println("$topic callback : $callback")
             }
         }
@@ -51,7 +68,7 @@ class RCLKotlinTest {
 
     fun serviceResponseTest() {
         val rclKotlin : RCLKotlin = RCLKotlin()
-
+        val serializationUtils = MessageSerializationUtils()
         val serviceName : String = "/add_two_intsResponse"
         val server : RCLServiceServer<AddTwoIntsResponse> = rclKotlin.createServiceServer(serviceName, AddTwoIntsResponse::class)
         server.getDataObservable().subscribe {it ->
