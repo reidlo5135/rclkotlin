@@ -8,6 +8,8 @@ import net.wavem.rclkotlin.rosdds.topic.RCLSubscription
 import net.wavem.rclkotlin.rosidl.infra.RCLMessageSerialization
 import net.wavem.rclkotlin.rosidl.message.example_interfaces.AddTwoIntsRequest
 import net.wavem.rclkotlin.rosidl.message.example_interfaces.AddTwoIntsResponse
+import net.wavem.rclkotlin.rosidl.message.geometry_msgs.Point
+import net.wavem.rclkotlin.rosidl.message.geometry_msgs.Quaternion
 import net.wavem.rclkotlin.rosidl.message.sensor_msgs.NavSatFix
 import net.wavem.rclkotlin.rosidl.message.sensor_msgs.NavSatStatus
 
@@ -39,17 +41,52 @@ class RCLKotlinTest {
 //            }
 //        }
 
-        val topic : String = "/status"
-        val rclSubscription : RCLSubscription<NavSatStatus> =
-            rclKotlin.createSubscription(topic, NavSatStatus::class)
+        val gpsTopic : String = "/gps/fix"
+        val rclGpsSubscription : RCLSubscription<NavSatFix> = rclKotlin.createSubscription(gpsTopic, NavSatFix::class)
 
-        rclSubscription.getDataObservable().subscribe { it ->
+        rclGpsSubscription.getDataObservable().subscribe {
             if (it != null) {
                 val d : RCLMessageSerialization = RCLMessageSerialization()
-                val callback : NavSatStatus? = d.read(it)
-                println("$topic callback : $callback")
+                val callback : NavSatFix? = d.read(it)
+                println("$gpsTopic callback : $callback")
             }
         }
+
+//        val topic : String = "/status"
+//        val rclSubscription : RCLSubscription<NavSatStatus> =
+//            rclKotlin.createSubscription(topic, NavSatStatus::class)
+//
+//        rclSubscription.getDataObservable().subscribe { it ->
+//            if (it != null) {
+//                val d : RCLMessageSerialization = RCLMessageSerialization()
+//                val callback : NavSatStatus? = d.read(it)
+//                println("$topic callback : $callback")
+//            }
+//        }
+
+//        val topic : String = "/point"
+//        val rclSubscription : RCLSubscription<Point> =
+//            rclKotlin.createSubscription(topic, Point::class)
+//
+//        rclSubscription.getDataObservable().subscribe { it ->
+//            if (it != null) {
+//                val d : RCLMessageSerialization = RCLMessageSerialization()
+//                val callback : Point? = d.read(it)
+//                println("$topic callback : $callback")
+//            }
+//        }
+
+//        val quaTopic : String = "/qua"
+//        val rclQuaSubscription : RCLSubscription<Quaternion> =
+//            rclKotlin.createSubscription(quaTopic, Quaternion::class)
+//
+//        rclQuaSubscription.getDataObservable().subscribe { it ->
+//            if (it != null) {
+//                val d : RCLMessageSerialization = RCLMessageSerialization()
+//                val callback : Quaternion? = d.read(it)
+//                println("$quaTopic callback : $callback")
+//            }
+//        }
     }
 
     fun serviceRequestTest() {
@@ -73,8 +110,8 @@ class RCLKotlinTest {
         val server : RCLServiceServer<AddTwoIntsResponse> = rclKotlin.createServiceServer(serviceName, AddTwoIntsResponse::class)
         server.getDataObservable().subscribe {it ->
             if (it != null) {
-                val response : AddTwoIntsResponse = AddTwoIntsResponse.read(it)
-                println("$serviceName resposne : $response")
+//                val response : AddTwoIntsResponse = AddTwoIntsResponse.read(it)
+//                println("$serviceName resposne : $response")
             }
         }
 

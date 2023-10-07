@@ -1,9 +1,7 @@
 package net.wavem.rclkotlin.rosidl.message.std_msgs
 
-import id.jros2messages.MessageSerializationUtils
 import id.jrosmessages.Message
 import id.xfunction.XJson
-import net.wavem.rclkotlin.rosidl.infra.RCLTypeSupport
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.*
@@ -43,28 +41,5 @@ class String() : Message {
         other as String
 
         return data == other.data
-    }
-
-    companion object : RCLTypeSupport<String> {
-        private val serializationUtils = MessageSerializationUtils()
-        @JvmStatic
-        fun test(data : ByteArray) : String {
-            return serializationUtils.read(data, String::class.java)
-        }
-
-        @JvmStatic
-        override fun read(data : ByteArray) : String {
-            val buf : ByteBuffer = ByteBuffer.wrap(data)
-            buf.order(ByteOrder.LITTLE_ENDIAN)
-
-            var len : Int = buf.getInt()
-            var strData : kotlin.String = ""
-
-            while (len-- > 0) strData += Char(buf.get().toUShort())
-
-            return String(
-                data = strData
-            )
-        }
     }
 }

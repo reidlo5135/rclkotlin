@@ -9,8 +9,8 @@ import kotlin.reflect.KClass
 
 
 open class RCLKotlin {
-    fun <M : Message> createPublisher(topic: String, messageType: KClass<M>): RCLPublisher<M> {
-        val rclPublisher: RCLPublisher<M> = RCLPublisher(messageType)
+    fun <M : Message> createPublisher(topic : String, messageType : KClass<M>) : RCLPublisher<M> {
+        val rclPublisher : RCLPublisher<M> = RCLPublisher(messageType)
         rclPublisher.registerPublisher(topic)
 
         println("$topic publisher created")
@@ -18,8 +18,8 @@ open class RCLKotlin {
         return rclPublisher
     }
 
-    fun <M : Message> createSubscription(topic: String, messageType: KClass<M>): RCLSubscription<M> {
-        val rclSubscription: RCLSubscription<M> = RCLSubscription<M>(messageType)
+    fun <M : Message> createSubscription(topic : String, messageType : KClass<M>) : RCLSubscription<M> {
+        val rclSubscription : RCLSubscription<M> = RCLSubscription(messageType)
         rclSubscription.registerSubscription(topic)
 
         println("$topic subscription created")
@@ -27,8 +27,8 @@ open class RCLKotlin {
         return rclSubscription
     }
 
-    fun <M : Message> createServiceClient(serviceName: String, serviceType: KClass<M>): RCLServiceClient<M> {
-        val rclServiceClient: RCLServiceClient<M> = RCLServiceClient(serviceType)
+    fun <M : Message> createServiceClient(serviceName : String, serviceType : KClass<M>) : RCLServiceClient<M> {
+        val rclServiceClient : RCLServiceClient<M> = RCLServiceClient(serviceType)
         rclServiceClient.registerServiceClient(serviceName)
 
         println("$serviceName client created")
@@ -36,8 +36,8 @@ open class RCLKotlin {
         return rclServiceClient
     }
 
-    fun <M : Message> createServiceServer(serviceName: String, serviceType: KClass<M>): RCLServiceServer<M> {
-        val rclServiceServer: RCLServiceServer<M> = RCLServiceServer(serviceType)
+    fun <M : Message> createServiceServer(serviceName : String, serviceType : KClass<M>) : RCLServiceServer<M> {
+        val rclServiceServer : RCLServiceServer<M> = RCLServiceServer(serviceType)
         rclServiceServer.registerServiceServer(serviceName)
 
         println("$serviceName server created")
