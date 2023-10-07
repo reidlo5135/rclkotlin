@@ -17,6 +17,7 @@ dependencies {
     implementation ("io.github.pinorobotics:rtpstalk:4.0")
     implementation ("io.reactivex:rxjava:1.3.8")
     testImplementation(kotlin("test"))
+    implementation(kotlin("reflect"))
 }
 
 tasks.test {

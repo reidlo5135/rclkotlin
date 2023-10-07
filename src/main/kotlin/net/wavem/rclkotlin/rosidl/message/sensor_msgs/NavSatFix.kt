@@ -2,17 +2,9 @@ package net.wavem.rclkotlin.rosidl.message.sensor_msgs
 
 import id.jrosmessages.Message
 import id.xfunction.XJson
-import net.wavem.rclkotlin.rosidl.infra.RCLTypeSupport
 import net.wavem.rclkotlin.rosidl.message.std_msgs.Header
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
 
 class NavSatFix() : Message {
-
-    val COVARIANCE_TYPE_UNKNOWN : Byte = 0
-    val COVARIANCE_TYPE_APPROXIMATED : Byte = 1
-    val COVARIANCE_TYPE_DIAGONAL_KNOWN : Byte = 2
-    val COVARIANCE_TYPE_KNOWN : Byte = 3
 
     var header : Header = Header()
     var status : NavSatStatus = NavSatStatus()
@@ -40,7 +32,7 @@ class NavSatFix() : Message {
         this.position_covariance_type = position_covariance_type
     }
 
-    override fun equals(other: Any?): Boolean {
+    override fun equals(other : Any?) : Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
@@ -49,7 +41,7 @@ class NavSatFix() : Message {
         return position_covariance.contentEquals(other.position_covariance)
     }
 
-    override fun hashCode(): Int {
+    override fun hashCode() : Int {
         return position_covariance.contentHashCode()
     }
 
@@ -65,40 +57,10 @@ class NavSatFix() : Message {
         )
     }
 
-    companion object : RCLTypeSupport<NavSatFix> {
-        @JvmStatic
-        override fun read(data : ByteArray) : NavSatFix {
-            val buf : ByteBuffer = ByteBuffer.wrap(data)
-            buf.order(ByteOrder.LITTLE_ENDIAN)
-
-            val header : Header = Header.read(data)
-            val headerSize : Int = 14 + header.frame_id.length
-            buf.position(headerSize)
-
-            val status : NavSatStatus = NavSatStatus.read(data)
-            buf.position(14)
-
-            val latitude : Double = buf.getDouble()
-            val longitude : Double = buf.getDouble()
-            val altitude : Double = buf.getDouble()
-
-            val position_covariance : DoubleArray = DoubleArray(9)
-
-            for (i in position_covariance.indices) {
-                position_covariance[i] = buf.getDouble()
-            }
-
-            val position_covariance_type : UByte = buf.get().toUByte()
-
-            return NavSatFix(
-                header = header,
-                status = status,
-                latitude = latitude,
-                longitude = longitude,
-                altitude = altitude,
-                position_covariance = position_covariance,
-                position_covariance_type = position_covariance_type
-            )
-        }
+    companion object {
+        const val COVARIANCE_TYPE_UNKNOWN : Byte = 0
+        const val COVARIANCE_TYPE_APPROXIMATED : Byte = 1
+        const val COVARIANCE_TYPE_DIAGONAL_KNOWN : Byte = 2
+        const val COVARIANCE_TYPE_KNOWN : Byte = 3
     }
 }

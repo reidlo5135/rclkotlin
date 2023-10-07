@@ -2,9 +2,10 @@ package net.wavem.rclkotlin.rosidl.message.std_msgs
 
 import id.jrosmessages.Message
 import id.xfunction.XJson
-import net.wavem.rclkotlin.rosidl.infra.RCLTypeSupport
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.util.*
+
 
 class String() : Message {
     var data : kotlin.String = ""
@@ -29,20 +30,16 @@ class String() : Message {
         )
     }
 
-    companion object : RCLTypeSupport<String> {
-        @JvmStatic
-        override fun read(data : ByteArray) : String {
-            val buf : ByteBuffer = ByteBuffer.wrap(data)
-            buf.order(ByteOrder.LITTLE_ENDIAN)
+    override fun hashCode(): Int {
+        return Objects.hash(data)
+    }
 
-            var len : Int = buf.getInt()
-            var strData : kotlin.String = ""
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
 
-            while (len-- > 0) strData += Char(buf.get().toUShort())
+        other as String
 
-            return String(
-                data = strData
-            )
-        }
+        return data == other.data
     }
 }

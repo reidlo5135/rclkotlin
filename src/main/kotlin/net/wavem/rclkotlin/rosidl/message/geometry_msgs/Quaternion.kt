@@ -2,7 +2,6 @@ package net.wavem.rclkotlin.rosidl.message.geometry_msgs
 
 import id.jrosmessages.Message
 import id.xfunction.XJson
-import net.wavem.rclkotlin.rosidl.infra.RCLTypeSupport
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
@@ -41,25 +40,5 @@ class Quaternion() : Message {
             "z", this.z,
             "w", this.w
         )
-    }
-
-    companion object : RCLTypeSupport<Quaternion> {
-        @JvmStatic
-        override fun read(data : ByteArray) : Quaternion {
-            val buf : ByteBuffer = ByteBuffer.wrap(data)
-            buf.order(ByteOrder.LITTLE_ENDIAN)
-
-            val x : Double = buf.getDouble()
-            val y : Double = buf.getDouble()
-            val z : Double = buf.getDouble()
-            val w : Double = buf.getDouble()
-
-            return Quaternion(
-                x = x,
-                y = y,
-                z = z,
-                w = w
-            )
-        }
     }
 }

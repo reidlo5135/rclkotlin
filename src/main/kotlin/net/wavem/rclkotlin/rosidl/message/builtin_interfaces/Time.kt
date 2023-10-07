@@ -2,7 +2,6 @@ package net.wavem.rclkotlin.rosidl.message.builtin_interfaces
 
 import id.jrosmessages.Message
 import id.xfunction.XJson
-import net.wavem.rclkotlin.rosidl.infra.RCLTypeSupport
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
@@ -30,21 +29,5 @@ class Time() : Message {
             "sec", this.sec,
             "nanosec", this.nanosec
         )
-    }
-
-    companion object : RCLTypeSupport<Time> {
-        @JvmStatic
-        override fun read(data : ByteArray) : Time {
-            val buf : ByteBuffer = ByteBuffer.wrap(data)
-            buf.order(ByteOrder.LITTLE_ENDIAN)
-
-            val sec : Int = buf.getInt()
-            val nanosec : Int = buf.getInt()
-
-            return Time(
-                sec = sec,
-                nanosec = nanosec
-            )
-        }
     }
 }
