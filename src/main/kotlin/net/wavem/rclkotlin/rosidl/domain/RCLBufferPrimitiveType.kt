@@ -1,6 +1,6 @@
 package net.wavem.rclkotlin.rosidl.domain
 
-enum class RCLBufferType(val type : String) {
+enum class RCLBufferPrimitiveType(val type : String) {
     STRING("kotlin.String"),
     BYTE("kotlin.Byte"),
     UBYTE("kotlin.UByte"),
@@ -16,6 +16,6 @@ enum class RCLBufferType(val type : String) {
     BOOLEANARRAY("kotlin.BooleanArray");
 
     companion object {
-        val TYPE_NAME_MAP : Map<String, RCLBufferType> = entries.associateBy { it.type }
+        val TYPE_NAME_MAP : Map<String, RCLBufferPrimitiveType> = entries.associateBy { it.type }
     }
 }

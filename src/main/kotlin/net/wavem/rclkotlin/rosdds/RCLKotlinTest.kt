@@ -8,10 +8,8 @@ import net.wavem.rclkotlin.rosdds.topic.RCLSubscription
 import net.wavem.rclkotlin.rosidl.infra.RCLMessageSerialization
 import net.wavem.rclkotlin.rosidl.message.example_interfaces.AddTwoIntsRequest
 import net.wavem.rclkotlin.rosidl.message.example_interfaces.AddTwoIntsResponse
-import net.wavem.rclkotlin.rosidl.message.geometry_msgs.Point
-import net.wavem.rclkotlin.rosidl.message.geometry_msgs.Quaternion
 import net.wavem.rclkotlin.rosidl.message.sensor_msgs.NavSatFix
-import net.wavem.rclkotlin.rosidl.message.sensor_msgs.NavSatStatus
+import net.wavem.rclkotlin.rosidl.message.std_msgs.Header
 
 class RCLKotlinTest {
     fun publishingTest() {
@@ -122,6 +120,9 @@ fun main(args : Array<String>) {
     val rclKotlinTest : RCLKotlinTest = RCLKotlinTest()
 //    publishingTest()
     rclKotlinTest.subscriptionTest()
+
+    val d : RCLMessageSerialization = RCLMessageSerialization()
+//    d.read<Header>(byteArrayOf(0))
 //    serviceRequestTest()
 //    rclKotlinTest.serviceResponseTest()
 }

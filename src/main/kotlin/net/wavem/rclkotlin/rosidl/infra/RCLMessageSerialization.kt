@@ -2,13 +2,14 @@ package net.wavem.rclkotlin.rosidl.infra
 
 import id.jrosmessages.Message
 import net.wavem.rclkotlin.rosidl.application.RCLBufferReadingService
-import net.wavem.rclkotlin.rosidl.domain.RCLBufferType
+import net.wavem.rclkotlin.rosidl.domain.RCLBufferPrimitiveType
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
 import kotlin.reflect.KParameter
+import kotlin.reflect.jvm.jvmErasure
 
 class RCLMessageSerialization {
 
@@ -26,198 +27,379 @@ class RCLMessageSerialization {
             for (constructor in constructors) {
                 val parameters : List<KParameter> = constructor.parameters
                 if (parameters.isEmpty()) continue
-                println("parameters : $parameters")
 
                 val args : MutableList<Any?> = mutableListOf()
 
                 for((index, param) in parameters.withIndex()) {
-                    println("buf remained : ${buf.remaining()}")
                     val type : String = param.type.toString()
                     println("type : $type")
 
-                    val rclBufferType : RCLBufferType? = RCLBufferType.TYPE_NAME_MAP[type]
+                    val rclBufferPrimitiveType : RCLBufferPrimitiveType? = RCLBufferPrimitiveType.TYPE_NAME_MAP[type]
 
-                    if (rclBufferType != null) {
-                        when (rclBufferType) {
-                            RCLBufferType.STRING -> {
-                                if (index != parameters.lastIndex) {
-                                    val strData : String = rclBufferReadingService.readString(buf)
-                                    args.add(strData)
-                                } else if (index != parameters.lastIndex) {
-                                    val strData : String = rclBufferReadingService.readString(index, buf)
-                                    args.add(strData)
-                                } else {
-                                    val strData : String = rclBufferReadingService.readString(buf)
-                                    args.add(strData)
+                    if (rclBufferPrimitiveType == null) {
+                        val cJClazz : Class<*> = Class.forName(type)
+                        val cKClazz : KClass<out Any> = cJClazz.kotlin
+                        println("cKCLazz : $cKClazz")
+
+                        val cArgs : MutableList<Any?> = mutableListOf()
+                        println("cArgs : $cArgs")
+
+                        val cAnalyzed : Any? = analyzeCustomClass(cKClazz, data)
+                        var cBuffCount : Int = 0
+
+                        if (cAnalyzed == null) {
+                            val cKConstructors : Collection<KFunction<Any>> = cKClazz.constructors
+
+                            for (cKConstructor in cKConstructors) {
+                                val cParameters : List<KParameter> = cKConstructor.parameters
+                                if (cParameters.isEmpty()) continue
+
+                                for(cParam in cParameters) {
+                                    val cType : String = cParam.type.toString()
+                                    println("cType : $cType")
+
+                                    val cRclBufferPrimitiveType : RCLBufferPrimitiveType? = RCLBufferPrimitiveType.TYPE_NAME_MAP[cType]
+
+                                    var dBuffCount : Int = 0
+
+                                    if (cRclBufferPrimitiveType == null) {
+                                        val dJClazz : Class<*> = Class.forName(cType)
+                                        val dKClazz : KClass<out Any> = dJClazz.kotlin
+                                        val dKConstructors : Collection<KFunction<Any>> = dKClazz.constructors
+
+                                        for (dKConstructor in dKConstructors) {
+                                            val dParameters : List<KParameter> = dKConstructor.parameters
+                                            if(dParameters.isEmpty()) continue
+
+                                            val dArgs : MutableList<Any?> = mutableListOf()
+
+                                            for ((dIndex, dParam) in dParameters.withIndex()) {
+                                                val dType : String = dParam.type.toString()
+                                                println("dType : $dType")
+                                                println("dIndex : $dIndex")
+
+                                                val dRclBufferPrimitiveType : RCLBufferPrimitiveType? = RCLBufferPrimitiveType.TYPE_NAME_MAP[dType]
+
+                                                if (dRclBufferPrimitiveType != null) {
+                                                    dArgs.add(analyzeCustomClass(dKClazz, data))
+                                                    when(dRclBufferPrimitiveType) {
+                                                        RCLBufferPrimitiveType.INT -> {
+                                                            dBuffCount += Int.SIZE_BYTES
+                                                        }
+                                                        else -> {}
+                                                    }
+                                                    println("dBuffCount : $dBuffCount")
+                                                    println("dArgs : $dArgs")
+                                                }
+                                            }
+                                            if (dArgs.size == dParameters.size) {
+                                                cBuffCount = dBuffCount
+                                                val dInstance = dKConstructor.call(*dArgs.toTypedArray())
+                                                println("dInstance : $dInstance")
+                                                cArgs.add(dInstance)
+                                            }
+                                        }
+                                    } else {
+                                        println("ccType : $cType")
+                                        println("cBuffCount : $cBuffCount")
+                                        buf.position(cBuffCount)
+
+                                        when(cRclBufferPrimitiveType){
+                                            RCLBufferPrimitiveType.STRING -> {
+                                                cArgs.add(analyzePrimitiveClass(String::class, data, cBuffCount))
+                                            }
+                                            else -> {
+
+                                            }
+                                        }
+                                    }
+                                }
+                                if (cArgs.size == cParameters.size) {
+                                    val cInstance = cKConstructor.call(*cArgs.toTypedArray())
+                                    println("cInstance : $cInstance")
+                                    args.add(cInstance)
                                 }
                             }
-                            RCLBufferType.BYTE -> {
-                                if (index == PARAMETERS_FIRST_INDEX) {
-                                    val bufByte : Byte = rclBufferReadingService.readByte(buf)
-                                    args.add(bufByte)
+                            println("cArgs : $cArgs")
+                        }
+                    } else {
+
+                    }
+                    println("args : $args")
+                }
+
+                if(args.size == parameters.size) {
+                    val instance = constructor.call(*args.toTypedArray())
+                    println("instance : $instance")
+
+                    return instance
+                }
+            }
+        } catch (ioe : IOException) {
+            ioe.printStackTrace()
+        }
+        return null
+    }
+
+    fun analyzePrimitiveClass(clazz: KClass<out Any>, data: ByteArray, count : Int) : Any? {
+        try {
+            println("analyzePrimitive clazz name : ${clazz.qualifiedName}")
+
+            val buf: ByteBuffer = ByteBuffer.wrap(data)
+            buf.order(ByteOrder.LITTLE_ENDIAN)
+
+            buf.position(count)
+
+            if (clazz == String::class) {
+                val len : Int = buf.getInt()
+                val stringBytes = ByteArray(count)
+                buf.get(stringBytes)
+                return String(stringBytes, Charsets.UTF_8)
+            } else if (clazz == Int::class) {
+                return buf.getInt()
+            }
+        } catch (ioe : IOException) {
+            ioe.printStackTrace()
+        }
+
+        return null
+    }
+
+    fun analyzeCustomClass(clazz: KClass<out Any>, data: ByteArray) : Any? {
+        try {
+            val constructors : Collection<KFunction<Any>> = clazz.constructors
+            println("analyzeCustom clazz name : ${clazz.qualifiedName}")
+
+            val buf : ByteBuffer = ByteBuffer.wrap(data)
+            buf.order(ByteOrder.LITTLE_ENDIAN)
+
+            for (constructor in constructors) {
+                val parameters : List<KParameter> = constructor.parameters
+                if (parameters.isEmpty()) continue
+                println("analyzeCustom parameters : $parameters")
+
+                for((index, param) in parameters.withIndex()) {
+                    println("analyzeCustom buf remained : ${buf.remaining()}")
+                    val type : String = param.type.toString()
+                    println("analyzeCustom type : $type")
+
+                    val rclBufferPrimitiveType : RCLBufferPrimitiveType? = RCLBufferPrimitiveType.TYPE_NAME_MAP[type]
+
+                    if (rclBufferPrimitiveType != null) {
+                        when (rclBufferPrimitiveType) {
+                            RCLBufferPrimitiveType.STRING -> {
+                                val strData : String = if (index != parameters.lastIndex) {
+                                    rclBufferReadingService.readString(buf)
                                 } else if (index != parameters.lastIndex) {
-                                    val bufByte : Byte = rclBufferReadingService.readByte(index, buf)
-                                    args.add(bufByte)
+                                    rclBufferReadingService.readString(index, buf)
+                                } else {
+                                    rclBufferReadingService.readString(buf)
+                                }
+                                return strData
+                            }
+                            RCLBufferPrimitiveType.BYTE -> {
+                                val bufByte : Byte = if (index == PARAMETERS_FIRST_INDEX) {
+                                    rclBufferReadingService.readByte(buf)
+                                } else if (index != parameters.lastIndex) {
+                                    rclBufferReadingService.readByte(index, buf)
                                 } else {
                                     if (buf.remaining() > Byte.SIZE_BYTES) {
-                                        println("${RCLBufferType.BYTE} remained buf is over ${Byte.SIZE_BYTES}")
+                                        println("${RCLBufferPrimitiveType.BYTE} remained buf is over ${Byte.SIZE_BYTES}")
                                         buf.position(Byte.SIZE_BYTES * index)
                                     }
-                                    val bufByte : Byte = rclBufferReadingService.readByte(buf)
-                                    args.add(bufByte)
+                                    rclBufferReadingService.readByte(buf)
                                 }
+
+                                return bufByte
                             }
-                            RCLBufferType.UBYTE -> {
-                                if (index == PARAMETERS_FIRST_INDEX) {
-                                    val bufUByte : UByte = rclBufferReadingService.readUByte(buf)
-                                    args.add(bufUByte)
+                            RCLBufferPrimitiveType.UBYTE -> {
+                                val bufUByte : UByte = if (index == PARAMETERS_FIRST_INDEX) {
+                                    rclBufferReadingService.readUByte(buf)
                                 } else if (index != parameters.lastIndex) {
-                                    val bufUByte : UByte = rclBufferReadingService.readUByte(index, buf)
-                                    args.add(bufUByte)
+                                    rclBufferReadingService.readUByte(index, buf)
                                 } else {
                                     if (buf.remaining() > UByte.SIZE_BYTES) {
-                                        println("${RCLBufferType.UBYTE} remained buf is over $UByte.SIZE_BYTES")
+                                        println("${RCLBufferPrimitiveType.UBYTE} remained buf is over $UByte.SIZE_BYTES")
                                         buf.position(UByte.SIZE_BYTES * index)
                                     }
-                                    val bufUByte : UByte = rclBufferReadingService.readUByte(buf)
-                                    args.add(bufUByte)
+                                    rclBufferReadingService.readUByte(buf)
                                 }
+
+                                return bufUByte
                             }
-                            RCLBufferType.INT -> {
-                                if (index == PARAMETERS_FIRST_INDEX) {
-                                    val bufInt : Int = rclBufferReadingService.readInt(buf)
-                                    args.add(bufInt)
+                            RCLBufferPrimitiveType.INT -> {
+                                val bufInt : Int = if (index == PARAMETERS_FIRST_INDEX) {
+                                    rclBufferReadingService.readInt(buf)
                                 } else if (index != parameters.lastIndex) {
-                                    val bufInt : Int = rclBufferReadingService.readInt(index, buf)
-                                    args.add(bufInt)
+                                    rclBufferReadingService.readInt(index, buf)
                                 } else {
                                     if (buf.remaining() > Int.SIZE_BYTES) {
-                                        println("${RCLBufferType.INT} remained buf is over ${Int.SIZE_BYTES}")
+                                        println("${RCLBufferPrimitiveType.INT} remained buf is over ${Int.SIZE_BYTES}")
                                         buf.position(Int.SIZE_BYTES * index)
                                     }
-                                    val bufInt : Int = rclBufferReadingService.readInt(buf)
-                                    args.add(bufInt)
+                                    rclBufferReadingService.readInt(buf)
                                 }
+
+                                return bufInt
                             }
-                            RCLBufferType.SHORT -> {
-                                if (index == PARAMETERS_FIRST_INDEX) {
-                                    val bufShort : Short = rclBufferReadingService.readShort(buf)
-                                    args.add(bufShort)
+                            RCLBufferPrimitiveType.SHORT -> {
+                                val bufShort : Short = if (index == PARAMETERS_FIRST_INDEX) {
+                                    rclBufferReadingService.readShort(buf)
                                 } else if (index != parameters.lastIndex) {
-                                    val bufShort : Short = rclBufferReadingService.readShort(index, buf)
-                                    args.add(bufShort)
+                                    rclBufferReadingService.readShort(index, buf)
                                 } else {
                                     if (buf.remaining() > Short.SIZE_BYTES) {
-                                        println("${RCLBufferType.SHORT} remained buf is over ${Short.SIZE_BYTES}")
+                                        println("${RCLBufferPrimitiveType.SHORT} remained buf is over ${Short.SIZE_BYTES}")
                                         buf.position(Short.SIZE_BYTES * index)
                                     }
-                                    val bufShort : Short = rclBufferReadingService.readShort(buf)
-                                    args.add(bufShort)
+                                    rclBufferReadingService.readShort(buf)
                                 }
+
+                                return bufShort
                             }
-                            RCLBufferType.USHORT -> {
-                                if (index == PARAMETERS_FIRST_INDEX) {
-                                    val bufUShort : UShort = rclBufferReadingService.readUShort(buf)
-                                    args.add(bufUShort)
+                            RCLBufferPrimitiveType.USHORT -> {
+                                val bufUShort : UShort = if (index == PARAMETERS_FIRST_INDEX) {
+                                    rclBufferReadingService.readUShort(buf)
                                 } else if (index != parameters.lastIndex) {
-                                    val bufUShort : UShort = rclBufferReadingService.readUShort(index, buf)
-                                    args.add(bufUShort)
+                                    rclBufferReadingService.readUShort(index, buf)
                                 } else {
                                     if (buf.remaining() > UShort.SIZE_BYTES) {
-                                        println("${RCLBufferType.USHORT} remained buf is over ${UShort.SIZE_BYTES}")
+                                        println("${RCLBufferPrimitiveType.USHORT} remained buf is over ${UShort.SIZE_BYTES}")
                                         buf.position(UShort.SIZE_BYTES * index)
                                     }
-                                    val bufUShort : UShort = rclBufferReadingService.readUShort(buf)
-                                    args.add(bufUShort)
+                                    rclBufferReadingService.readUShort(buf)
                                 }
+
+                                return bufUShort
                             }
-                            RCLBufferType.LONG -> {
-                                if (index == PARAMETERS_FIRST_INDEX) {
-                                    val bufLong : Long = rclBufferReadingService.readLong(buf)
-                                    args.add(bufLong)
+                            RCLBufferPrimitiveType.LONG -> {
+                                val bufLong : Long = if (index == PARAMETERS_FIRST_INDEX) {
+                                    rclBufferReadingService.readLong(buf)
                                 } else if (index != parameters.lastIndex) {
-                                    val bufLong : Long = rclBufferReadingService.readLong(index, buf)
-                                    args.add(bufLong)
+                                    rclBufferReadingService.readLong(index, buf)
                                 } else {
                                     if (buf.remaining() > Long.SIZE_BYTES) {
-                                        println("${RCLBufferType.LONG} remained buf is over ${Long.SIZE_BYTES}")
+                                        println("${RCLBufferPrimitiveType.LONG} remained buf is over ${Long.SIZE_BYTES}")
                                         buf.position(Long.SIZE_BYTES * index)
                                     }
-                                    val bufLong : Long = rclBufferReadingService.readLong(buf)
-                                    args.add(bufLong)
+                                    rclBufferReadingService.readLong(buf)
                                 }
+
+                                return bufLong
                             }
-                            RCLBufferType.DOUBLE -> {
-                                if (index == PARAMETERS_FIRST_INDEX) {
-                                    val bufDouble : Double = rclBufferReadingService.readDouble(buf)
-                                    args.add(bufDouble)
+                            RCLBufferPrimitiveType.DOUBLE -> {
+                                val bufDouble : Double = if (index == PARAMETERS_FIRST_INDEX) {
+                                    rclBufferReadingService.readDouble(buf)
                                 } else if (index != parameters.lastIndex) {
-                                    val bufDouble : Double = rclBufferReadingService.readDouble(index, buf)
-                                    args.add(bufDouble)
+                                    rclBufferReadingService.readDouble(index, buf)
                                 } else {
                                     if (buf.remaining() > Double.SIZE_BYTES) {
-                                        println("${RCLBufferType.DOUBLE} remained buf is over ${Double.SIZE_BYTES}")
+                                        println("${RCLBufferPrimitiveType.DOUBLE} remained buf is over ${Double.SIZE_BYTES}")
                                         buf.position(Double.SIZE_BYTES * index)
                                     }
-                                    val bufDouble : Double = rclBufferReadingService.readDouble(buf)
-                                    args.add(bufDouble)
+                                    rclBufferReadingService.readDouble(buf)
                                 }
+
+                                return bufDouble
                             }
-                            RCLBufferType.FLOAT -> {
-                                if (index == PARAMETERS_FIRST_INDEX) {
-                                    val bufFloat : Float = rclBufferReadingService.readFloat(buf)
-                                    args.add(bufFloat)
+                            RCLBufferPrimitiveType.FLOAT -> {
+                                val bufFloat : Float = if (index == PARAMETERS_FIRST_INDEX) {
+                                    rclBufferReadingService.readFloat(buf)
                                 } else if (index != parameters.lastIndex) {
-                                    val bufFloat : Float = rclBufferReadingService.readFloat(index, buf)
-                                    args.add(bufFloat)
+                                    rclBufferReadingService.readFloat(index, buf)
                                 } else {
                                     if (buf.remaining() > Float.SIZE_BYTES) {
-                                        println("${RCLBufferType.FLOAT} remained buf is over ${Float.SIZE_BYTES}")
+                                        println("${RCLBufferPrimitiveType.FLOAT} remained buf is over ${Float.SIZE_BYTES}")
                                         buf.position(Float.SIZE_BYTES * index)
                                     }
-                                    val bufFloat : Float = rclBufferReadingService.readFloat(buf)
-                                    args.add(bufFloat)
+                                    rclBufferReadingService.readFloat(buf)
                                 }
+
+                                return bufFloat
                             }
-                            RCLBufferType.DOUBLEARRAY -> {
+                            RCLBufferPrimitiveType.DOUBLEARRAY -> {
                                 val size : Int = buf.getInt()
                                 val array : DoubleArray = DoubleArray(size)
                                 for(i in 0..<size) {
                                     array[i] = buf.getDouble()
                                 }
-                                args.add(array)
                             }
-                            RCLBufferType.FLOATARRAY -> {
+                            RCLBufferPrimitiveType.FLOATARRAY -> {
                                 val size : Int = buf.getInt()
                                 val array : FloatArray = FloatArray(size)
                                 for(i in 0..<size) {
                                     array[i] = buf.getFloat()
                                 }
-                                args.add(array)
                             }
-                            RCLBufferType.BOOLEAN -> args.add(buf.get() != 0.toByte())
-                            RCLBufferType.BOOLEANARRAY -> {
+                            RCLBufferPrimitiveType.BOOLEAN -> {
+                                return buf.get() != 0.toByte()
+                            }
+                            RCLBufferPrimitiveType.BOOLEANARRAY -> {
                                 val size : Int = buf.getInt()
                                 val array : BooleanArray = BooleanArray(size)
                                 for (i in 0..size) {
                                     array[i] = buf.get() != 0.toByte()
                                 }
-                                args.add(array)
                             }
                         }
                     } else {
-
-                    }
-
-                    if(args.size == parameters.size) {
-                        val instance : M = constructor.call(*args.toTypedArray())
-                        println("instance : $instance")
-                        return instance
+                        return null
                     }
                 }
             }
         } catch (ioe : IOException) {
             ioe.printStackTrace()
+        }
+
+        return null
+    }
+
+    fun readCustomClass(className: String, buf: ByteBuffer): Any? {
+        try {
+            // 클래스 이름을 이용하여 Class 객체를 얻습니다.
+            val clazz = Class.forName(className)
+
+            // Java Class를 Kotlin KClass로 변환합니다.
+            val kClass = clazz.kotlin
+
+            // 커스텀 클래스의 생성자를 찾습니다.
+            val constructors = kClass.constructors
+
+            if (constructors.isNotEmpty()) {
+                // 첫 번째 생성자를 사용합니다. 필요에 따라 적절한 생성자를 선택할 수 있습니다.
+                val constructor = constructors.first()
+
+                // 생성자의 매개변수를 얻습니다.
+                val parameters = constructor.parameters
+
+                // 생성자의 매개변수를 읽어올 리스트를 초기화합니다.
+                val args = mutableListOf<Any?>()
+
+                // 생성자의 매개변수를 하나씩 읽어옵니다.
+                for (param in parameters) {
+                    val type = param.type.toString()
+                    val rclBufferPrimitiveType = RCLBufferPrimitiveType.TYPE_NAME_MAP[type]
+
+                    if (rclBufferPrimitiveType != null) {
+                        // 기본 타입의 처리
+                        // ...
+                    } else if (param.type.jvmErasure == String::class) {
+                        // String 타입 처리
+                        // ...
+                    } else {
+                        // 커스텀 클래스 처리
+                        val customClassInstance = readCustomClass(type, buf)
+                        args.add(customClassInstance)
+                    }
+                }
+
+                // 생성자를 호출하여 객체를 생성합니다.
+                val instance = constructor.call(*args.toTypedArray())
+
+                return instance
+            }
+        } catch (e: ClassNotFoundException) {
+            e.printStackTrace()
         }
         return null
     }
