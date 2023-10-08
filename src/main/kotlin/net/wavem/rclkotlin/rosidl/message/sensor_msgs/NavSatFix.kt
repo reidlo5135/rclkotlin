@@ -5,7 +5,6 @@ import id.xfunction.XJson
 import net.wavem.rclkotlin.rosidl.message.std_msgs.Header
 
 class NavSatFix() : Message {
-
     var header : Header = Header()
     var status : NavSatStatus = NavSatStatus()
     var latitude : Double = 0.0
