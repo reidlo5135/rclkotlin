@@ -9,11 +9,10 @@ import java.nio.ByteOrder
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
 import kotlin.reflect.KParameter
-import kotlin.reflect.jvm.jvmErasure
 
 class RCLMessageSerialization {
 
-    val rclBufferReadingService : RCLBufferReadingService = RCLBufferReadingService()
+    private val rclBufferReadingService : RCLBufferReadingService = RCLBufferReadingService()
 
     inline fun <reified M : Message> read(data : ByteArray) : M? {
         try {
@@ -29,6 +28,7 @@ class RCLMessageSerialization {
                 if (parameters.isEmpty()) continue
 
                 val args : MutableList<Any?> = mutableListOf()
+                var cBuffCount : Int = 0
 
                 for((index, param) in parameters.withIndex()) {
                     val type : String = param.type.toString()
@@ -39,15 +39,14 @@ class RCLMessageSerialization {
                     if (rclBufferPrimitiveType == null) {
                         val cJClazz : Class<*> = Class.forName(type)
                         val cKClazz : KClass<out Any> = cJClazz.kotlin
-                        println("cKCLazz : $cKClazz")
+                        println("cKClazz : $cKClazz")
 
-                        val cArgs : MutableList<Any?> = mutableListOf()
-                        println("cArgs : $cArgs")
-
-                        val cAnalyzed : Any? = analyzeCustomClass(cKClazz, data)
-                        var cBuffCount : Int = 0
+                        val cAnalyzed : Any? = analyzeCustomClass(cKClazz, data, 0)
 
                         if (cAnalyzed == null) {
+                            val cArgs : MutableList<Any?> = mutableListOf()
+                            println("cArgs : $cArgs")
+
                             val cKConstructors : Collection<KFunction<Any>> = cKClazz.constructors
 
                             for (cKConstructor in cKConstructors) {
@@ -81,8 +80,15 @@ class RCLMessageSerialization {
                                                 val dRclBufferPrimitiveType : RCLBufferPrimitiveType? = RCLBufferPrimitiveType.TYPE_NAME_MAP[dType]
 
                                                 if (dRclBufferPrimitiveType != null) {
-                                                    dArgs.add(analyzeCustomClass(dKClazz, data))
-                                                    when(dRclBufferPrimitiveType) {
+                                                    var position : Int = 0
+                                                    position = if (dIndex == 0) {
+                                                        0
+                                                    } else {
+                                                        dBuffCount
+                                                    }
+                                                    dArgs.add(analyzeCustomClass(dKClazz, data, position))
+
+                                                    when (dRclBufferPrimitiveType) {
                                                         RCLBufferPrimitiveType.INT -> {
                                                             dBuffCount += Int.SIZE_BYTES
                                                         }
@@ -92,8 +98,9 @@ class RCLMessageSerialization {
                                                     println("dArgs : $dArgs")
                                                 }
                                             }
+
                                             if (dArgs.size == dParameters.size) {
-                                                cBuffCount = dBuffCount
+                                                cBuffCount += dBuffCount
                                                 val dInstance = dKConstructor.call(*dArgs.toTypedArray())
                                                 println("dInstance : $dInstance")
                                                 cArgs.add(dInstance)
@@ -104,9 +111,10 @@ class RCLMessageSerialization {
                                         println("cBuffCount : $cBuffCount")
                                         buf.position(cBuffCount)
 
-                                        when(cRclBufferPrimitiveType){
+                                        when (cRclBufferPrimitiveType) {
                                             RCLBufferPrimitiveType.STRING -> {
                                                 cArgs.add(analyzePrimitiveClass(String::class, data, cBuffCount))
+                                                cBuffCount += 8
                                             }
                                             else -> {
 
@@ -121,6 +129,53 @@ class RCLMessageSerialization {
                                 }
                             }
                             println("cArgs : $cArgs")
+                        } else {
+                            val ccArgs : MutableList<Any?> = mutableListOf()
+                            println("cBufCount : $cBuffCount")
+                            println("ccKClazz Name : ${cKClazz.qualifiedName}")
+
+                            val ccKConstructors : Collection<KFunction<Any>> = cKClazz.constructors
+
+                            for (ccKConstructor in ccKConstructors) {
+                                val ccParameters : List<KParameter> = ccKConstructor.parameters
+                                if (ccParameters.isEmpty()) continue
+                                println("ccParameters : $ccParameters")
+
+                                for((ccIndex, ccParam) in ccParameters.withIndex()) {
+                                    val ccType : String = ccParam.type.toString()
+                                    println("ccType : $ccType")
+                                    var ccBuffCount : Int = 0
+                                    val ccRclBufferPrimitiveType : RCLBufferPrimitiveType? = RCLBufferPrimitiveType.TYPE_NAME_MAP[ccType]
+                                    when (ccRclBufferPrimitiveType) {
+                                        RCLBufferPrimitiveType.BYTE -> {
+                                            if (ccIndex == 0) {
+                                                ccBuffCount = cBuffCount
+                                            } else {
+                                                ccBuffCount += cBuffCount + Byte.SIZE_BYTES
+                                            }
+                                        }
+                                        RCLBufferPrimitiveType.USHORT -> {
+                                            if (ccIndex == 0) {
+                                                ccBuffCount = cBuffCount
+                                            } else {
+                                                ccBuffCount += cBuffCount + UShort.SIZE_BYTES
+                                            }
+                                        }
+                                        else -> {}
+                                    }
+                                    println("ccBufCount : $ccBuffCount")
+                                    println("ccIndex : $ccIndex")
+                                    ccArgs.add(analyzeCustomClass(cKClazz, data, ccBuffCount))
+                                    println("ccArgs[$ccIndex] : ${ccArgs[ccIndex]}")
+                                }
+
+                                if(ccArgs.size == ccParameters.size) {
+                                    println("ccArgs : $ccArgs")
+//                                    val ccInstance = ccKConstructor.call(*ccArgs.toTypedArray())
+//                                    println("ccInstance : $ccInstance")
+                                    args.add(ccArgs)
+                                }
+                            }
                         }
                     } else {
 
@@ -141,18 +196,19 @@ class RCLMessageSerialization {
         return null
     }
 
-    fun analyzePrimitiveClass(clazz: KClass<out Any>, data: ByteArray, count : Int) : Any? {
+    fun analyzePrimitiveClass(clazz: KClass<out Any>, data: ByteArray, position : Int) : Any? {
         try {
-            println("analyzePrimitive clazz name : ${clazz.qualifiedName}")
+            println("analyzePrimitiveClazz name : ${clazz.qualifiedName}")
+            println("analyzePrimitiveClazz position : $position")
 
             val buf: ByteBuffer = ByteBuffer.wrap(data)
             buf.order(ByteOrder.LITTLE_ENDIAN)
 
-            buf.position(count)
+            buf.position(position)
 
             if (clazz == String::class) {
                 val len : Int = buf.getInt()
-                val stringBytes = ByteArray(count)
+                val stringBytes = ByteArray(position)
                 buf.get(stringBytes)
                 return String(stringBytes, Charsets.UTF_8)
             } else if (clazz == Int::class) {
@@ -165,23 +221,26 @@ class RCLMessageSerialization {
         return null
     }
 
-    fun analyzeCustomClass(clazz: KClass<out Any>, data: ByteArray) : Any? {
+    fun analyzeCustomClass(clazz: KClass<out Any>, data: ByteArray, position: Int) : Any? {
         try {
+            println("analyzeCustomClazz name : ${clazz.qualifiedName}")
+            println("analyzeCustomClazz position : $position")
+
             val constructors : Collection<KFunction<Any>> = clazz.constructors
-            println("analyzeCustom clazz name : ${clazz.qualifiedName}")
 
             val buf : ByteBuffer = ByteBuffer.wrap(data)
             buf.order(ByteOrder.LITTLE_ENDIAN)
+            buf.position(position)
 
             for (constructor in constructors) {
                 val parameters : List<KParameter> = constructor.parameters
                 if (parameters.isEmpty()) continue
-                println("analyzeCustom parameters : $parameters")
+                println("analyzeCustomClazz parameters : $parameters")
 
                 for((index, param) in parameters.withIndex()) {
-                    println("analyzeCustom buf remained : ${buf.remaining()}")
+                    println("analyzeCustomClazz buf remained : ${buf.remaining()}")
                     val type : String = param.type.toString()
-                    println("analyzeCustom type : $type")
+                    println("analyzeCustomClazz type : $type")
 
                     val rclBufferPrimitiveType : RCLBufferPrimitiveType? = RCLBufferPrimitiveType.TYPE_NAME_MAP[type]
 
@@ -351,56 +410,6 @@ class RCLMessageSerialization {
             ioe.printStackTrace()
         }
 
-        return null
-    }
-
-    fun readCustomClass(className: String, buf: ByteBuffer): Any? {
-        try {
-            // 클래스 이름을 이용하여 Class 객체를 얻습니다.
-            val clazz = Class.forName(className)
-
-            // Java Class를 Kotlin KClass로 변환합니다.
-            val kClass = clazz.kotlin
-
-            // 커스텀 클래스의 생성자를 찾습니다.
-            val constructors = kClass.constructors
-
-            if (constructors.isNotEmpty()) {
-                // 첫 번째 생성자를 사용합니다. 필요에 따라 적절한 생성자를 선택할 수 있습니다.
-                val constructor = constructors.first()
-
-                // 생성자의 매개변수를 얻습니다.
-                val parameters = constructor.parameters
-
-                // 생성자의 매개변수를 읽어올 리스트를 초기화합니다.
-                val args = mutableListOf<Any?>()
-
-                // 생성자의 매개변수를 하나씩 읽어옵니다.
-                for (param in parameters) {
-                    val type = param.type.toString()
-                    val rclBufferPrimitiveType = RCLBufferPrimitiveType.TYPE_NAME_MAP[type]
-
-                    if (rclBufferPrimitiveType != null) {
-                        // 기본 타입의 처리
-                        // ...
-                    } else if (param.type.jvmErasure == String::class) {
-                        // String 타입 처리
-                        // ...
-                    } else {
-                        // 커스텀 클래스 처리
-                        val customClassInstance = readCustomClass(type, buf)
-                        args.add(customClassInstance)
-                    }
-                }
-
-                // 생성자를 호출하여 객체를 생성합니다.
-                val instance = constructor.call(*args.toTypedArray())
-
-                return instance
-            }
-        } catch (e: ClassNotFoundException) {
-            e.printStackTrace()
-        }
         return null
     }
 
