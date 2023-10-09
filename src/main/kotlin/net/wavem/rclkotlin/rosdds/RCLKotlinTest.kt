@@ -24,7 +24,6 @@ class RCLKotlinTest {
     }
 
     fun subscriptionTest() {
-        val rclKotlin : RCLKotlin = RCLKotlin()
 //        val topic : String = "/chatter"
 //        val rclSubscription : RCLSubscription<net.wavem.rclkotlin.rosidl.message.std_msgs.String> =
 //            rclKotlin.createSubscription(topic, net.wavem.rclkotlin.rosidl.message.std_msgs.String::class)
