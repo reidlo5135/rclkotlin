@@ -38,8 +38,6 @@ Before installing, please ensure the following software is installed and configu
 
 - [openjdk](https://openjdk.org/) version required 17 - **INSTALL [openjdk17](https://openjdk.org/projects/jdk/17/)**
 
-- [mosquitto](https://mosquitto.org/) version required 1.6.9 - **INSTALL [mosquitto 1.6.9](https://mosquitto.org/)**
-
 ### 2-2. Install openjdk17
 ```bash
 sudo apt-get update
