@@ -25,8 +25,7 @@ class RCLKotlinTest {
 
     fun subscriptionTest() {
 //        val topic : String = "/chatter"
-//        val rclSubscription : RCLSubscription<net.wavem.rclkotlin.rosidl.message.std_msgs.String> =
-//            rclKotlin.createSubscription(topic, net.wavem.rclkotlin.rosidl.message.std_msgs.String::class)
+//        val rclSubscription : Subscription = RCLKotlin.createSubscription<net.wavem.rclkotlin.rosidl.message.std_msgs.String>(topic)
 //
 //        rclSubscription.getDataObservable().subscribe { it ->
 //            if (it != null) {
