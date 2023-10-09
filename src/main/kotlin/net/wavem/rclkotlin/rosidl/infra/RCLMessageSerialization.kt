@@ -1,7 +1,6 @@
 package net.wavem.rclkotlin.rosidl.infra
 
 import com.google.gson.Gson
-import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import id.jrosmessages.Message
 import net.wavem.rclkotlin.rosidl.application.RCLBufferReadingService
@@ -13,25 +12,40 @@ import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
 import kotlin.reflect.KParameter
 
+/**
+ * @author reidlo
+ * @since 2023.10.07
+ */
 class RCLMessageSerialization {
 
+    val gson : Gson = Gson()
     private val rclBufferReadingService : RCLBufferReadingService = RCLBufferReadingService()
 
     inline fun <reified M : Message> read(data : ByteArray) : M? {
         try {
-            val clazz : KClass<M> = M::class
-            val constructors : Collection<KFunction<M>> = clazz.constructors
-            val clazzName : String = clazz.simpleName.toString()
-            println("clazzName : $clazzName")
+            /**
+             * Level : B
+             * ClassType : kClass
+             * for M class what implements to Message
+             */
+            val kClass : KClass<M> = M::class
+            val kConstructors : Collection<KFunction<M>> = kClass.constructors
+            val kClassSimpleName : String = kClass.simpleName.toString()
+            println("kClassSimpleName : $kClassSimpleName")
 
             val buf : ByteBuffer = ByteBuffer.wrap(data)
             buf.order(ByteOrder.LITTLE_ENDIAN)
 
             val instanceJson : JsonObject = JsonObject()
 
-            for (constructor in constructors) {
-                val parameters : List<KParameter> = constructor.parameters
-                if (parameters.isEmpty()) continue
+            /**
+             * Level : B
+             * ClassType : kClass
+             * for M's fields class
+             */
+            for (kConstructor in kConstructors) {
+                val kParameters : List<KParameter> = kConstructor.parameters
+                if (kParameters.isEmpty()) continue
 
                 val args : MutableList<Any?> = mutableListOf()
 
@@ -39,69 +53,104 @@ class RCLMessageSerialization {
                 var cBuffCount : Int = 0
                 val cInstanceJson : JsonObject = JsonObject()
 
-                for((index, param) in parameters.withIndex()) {
+                /**
+                 * Level : B
+                 * ClassType : kClass
+                 * for M's fields class' parameters
+                 */
+                for((index, param) in kParameters.withIndex()) {
                     paramName = param.name.toString()
-                    println("$clazzName paraName : $paramName")
+                    println("$kClassSimpleName paramName : $paramName")
 
                     val type : String = param.type.toString()
-                    println("$clazzName type : $type")
+                    println("$kClassSimpleName type : $type")
 
                     val rclBufferPrimitiveType : RCLBufferPrimitiveType? = RCLBufferPrimitiveType.TYPE_NAME_MAP[type]
 
                     var cParamName : String = ""
                     val dInstanceJson : JsonObject = JsonObject()
 
+                    /**
+                     * Level : B
+                     * ClassType : kClass
+                     * when M's fields type is not belongs to kotlin's primitive types. (for Custom Class)
+                     */
                     if (rclBufferPrimitiveType == null) {
-                        val cJClazz : Class<*> = Class.forName(type)
-                        val cKClazz : KClass<out Any> = cJClazz.kotlin
-                        val cKClazzName : String = cKClazz.simpleName.toString()
-                        println("cKClazzName : $cKClazzName")
+                        val cJClass : Class<*> = Class.forName(type)
+                        val cKClass : KClass<out Any> = cJClass.kotlin
+                        val cKClassSimpleName : String = cKClass.simpleName.toString()
+                        println("cKClassSimpleName : $cKClassSimpleName")
 
-                        val cAnalyzed : Any? = this.readParameters(parameters, index, data, 0)
+                        val cAnalyzed : Any? = this.readParameters(kParameters, index, data, 0)
 
                         if (cAnalyzed == null) {
                             val cArgs : MutableList<Any?> = mutableListOf()
-                            println("$cKClazzName cArgs : $cArgs")
+                            println("$cKClassSimpleName cArgs : $cArgs")
 
-                            val cKConstructors : Collection<KFunction<Any>> = cKClazz.constructors
+                            val cKConstructors : Collection<KFunction<Any>> = cKClass.constructors
 
+                            /**
+                             * Level : C
+                             * ClassType : cKClass
+                             * for M's fields custom classes
+                             */
                             for (cKConstructor in cKConstructors) {
                                 val cParameters : List<KParameter> = cKConstructor.parameters
                                 if (cParameters.isEmpty()) continue
 
                                 var dBuffCount : Int = 0
 
+                                /**
+                                 * Level : C
+                                 * ClassType : cKClass
+                                 * for M's fields custom classes' parameters
+                                 */
                                 for((cIndex, cParam) in cParameters.withIndex()) {
                                     cParamName = cParam.name.toString()
-                                    println("$cKClazzName[$cIndex] paraName : $cParamName")
+                                    println("$cKClassSimpleName[$cIndex] paramName : $cParamName")
 
                                     val cType : String = cParam.type.toString()
-                                    println("$cKClazzName[$cIndex] cType : $cType")
+                                    println("$cKClassSimpleName[$cIndex] cType : $cType")
 
                                     val cRclBufferPrimitiveType : RCLBufferPrimitiveType? = RCLBufferPrimitiveType.TYPE_NAME_MAP[cType]
 
                                     var dParamName : String = ""
 
+                                    /**
+                                     * Level : C
+                                     * ClassType : cKClass
+                                     * when M's fields custom classes' parameters type is not belongs to kotlin's primitive types. (for Custom Class)
+                                     */
                                     if (cRclBufferPrimitiveType == null) {
-                                        val dJClazz : Class<*> = Class.forName(cType)
-                                        val dKClazz : KClass<out Any> = dJClazz.kotlin
-                                        val dKClazzName : String = dKClazz.simpleName.toString()
-                                        println("dKClazzName : $dKClazzName")
+                                        val dJClass : Class<*> = Class.forName(cType)
+                                        val dKClass : KClass<out Any> = dJClass.kotlin
+                                        val dKClassSimpleName : String = dKClass.simpleName.toString()
+                                        println("dKClassSimpleName : $dKClassSimpleName")
 
-                                        val dKConstructors : Collection<KFunction<Any>> = dKClazz.constructors
+                                        val dKConstructors : Collection<KFunction<Any>> = dKClass.constructors
 
+                                        /**
+                                         * Level : D
+                                         * ClassType : dKClass
+                                         * for M's fields custom classes' parameters' classes
+                                         */
                                         for (dKConstructor in dKConstructors) {
                                             val dParameters : List<KParameter> = dKConstructor.parameters
-                                            if(dParameters.isEmpty()) continue
+                                            if (dParameters.isEmpty()) continue
 
                                             val dArgs : MutableList<Any?> = mutableListOf()
 
+                                            /**
+                                             * Level : D
+                                             * ClassType : dKClass
+                                             * for M's fields custom classes' parameters' classes' parameters
+                                             */
                                             for ((dIndex, dParam) in dParameters.withIndex()) {
                                                 dParamName = dParam.name.toString()
-                                                println("$dKClazzName[$dIndex] paramName : $dParamName")
+                                                println("$dKClassSimpleName[$dIndex] paramName : $dParamName")
 
                                                 val dType : String = dParam.type.toString()
-                                                println("$dKClazzName[$dIndex] dType : $dType")
+                                                println("$dKClassSimpleName[$dIndex] dType : $dType")
 
                                                 val dRclBufferPrimitiveType : RCLBufferPrimitiveType? = RCLBufferPrimitiveType.TYPE_NAME_MAP[dType]
 
@@ -122,29 +171,39 @@ class RCLMessageSerialization {
                                                         else -> {}
                                                     }
 
-                                                    println("$dKClazzName[$dIndex] dBuffCount : $dBuffCount")
-                                                    println("$dKClazzName[$dIndex] dArgs : $dArgs")
+                                                    println("$dKClassSimpleName[$dIndex] dBuffCount : $dBuffCount")
+                                                    println("$dKClassSimpleName[$dIndex] dArgs : $dArgs")
                                                 }
                                             }
 
+                                            /**
+                                             * Level : D
+                                             * ClassType : dKClass
+                                             * calling dKConstructor when building dArgs has been completed.
+                                             */
                                             if (dArgs.size == dParameters.size) {
                                                 cBuffCount += dBuffCount
                                                 val dInstance : Any = dKConstructor.call(*dArgs.toTypedArray())
-                                                println("$dKClazzName dInstance : $dInstance")
-                                                cInstanceJson.add(cParamName, Gson().toJsonTree(dInstance))
-//                                                cArgs.add(dInstance)
+                                                println("$dKClassSimpleName dInstance : $dInstance")
+                                                cInstanceJson.add(cParamName, gson.toJsonTree(dInstance))
+                                                println("$cParamName cInstanceJson : $cInstanceJson")
                                             }
                                         }
                                     } else {
-                                        println("$cKClazzName cType : $cType")
-                                        println("$cKClazzName cBuffCount : $cBuffCount")
+                                        /**
+                                         * Level : C
+                                         * ClassType : cKClass
+                                         * when M's fields custom classes' parameters type is belongs to kotlin's primitive types.
+                                         */
+                                        println("$cKClassSimpleName cType : $cType")
+                                        println("$cKClassSimpleName cBuffCount : $cBuffCount")
 
                                         when (cRclBufferPrimitiveType) {
                                             RCLBufferPrimitiveType.STRING -> {
-                                                println("$cKClazzName cParam ${RCLBufferPrimitiveType.STRING} first index : $cIndex, buffCount : $cBuffCount")
+                                                println("$cKClassSimpleName cParam ${RCLBufferPrimitiveType.STRING} first index : $cIndex, buffCount : $cBuffCount")
                                                 val str : String = this.readParameters(cParameters, cIndex, data, cBuffCount).toString()
                                                 val strSize : Int = str.toByteArray(Charsets.UTF_8).size
-                                                println("$cKClazzName cParam ${RCLBufferPrimitiveType.STRING} str : $str, len : $strSize")
+                                                println("$cKClassSimpleName cParam ${RCLBufferPrimitiveType.STRING} str : $str, len : $strSize")
                                                 cInstanceJson.addProperty(cParamName, str.replace("\u0000", ""))
                                                 cArgs.add(cInstanceJson)
                                                 cBuffCount += strSize * 2
@@ -152,21 +211,21 @@ class RCLMessageSerialization {
                                             RCLBufferPrimitiveType.BYTE -> {
                                                 if (cIndex == PARAMETERS_FIRST_INDEX) {
                                                     cArgs.add(this.readParameters(cParameters, cIndex, data, cBuffCount))
-                                                    println("$cKClazzName cParam ${RCLBufferPrimitiveType.BYTE} first index : $cIndex, buffCount : $cBuffCount")
+                                                    println("$cKClassSimpleName cParam ${RCLBufferPrimitiveType.BYTE} first index : $cIndex, buffCount : $cBuffCount")
                                                 } else {
                                                     cBuffCount += Byte.SIZE_BYTES
                                                     cArgs.add(this.readParameters(cParameters, cIndex, data, cBuffCount))
-                                                    println("$cKClazzName cParam ${RCLBufferPrimitiveType.BYTE} other index : $cIndex, buffCount : $cBuffCount")
+                                                    println("$cKClassSimpleName cParam ${RCLBufferPrimitiveType.BYTE} other index : $cIndex, buffCount : $cBuffCount")
                                                 }
                                             }
                                             RCLBufferPrimitiveType.USHORT -> {
                                                 if (cIndex == PARAMETERS_FIRST_INDEX) {
-                                                    println("$cKClazzName cParam ${RCLBufferPrimitiveType.USHORT} first index : $cIndex, buffCount : $cBuffCount")
+                                                    println("$cKClassSimpleName cParam ${RCLBufferPrimitiveType.USHORT} first index : $cIndex, buffCount : $cBuffCount")
                                                     cArgs.add(this.readParameters(cParameters, cIndex, data, cBuffCount))
                                                 } else {
                                                     cBuffCount += UShort.SIZE_BYTES
                                                     cArgs.add(this.readParameters(cParameters, cIndex, data, cBuffCount))
-                                                    println("$cKClazzName cParam ${RCLBufferPrimitiveType.USHORT} other index : $cIndex, buffCount : $cBuffCount")
+                                                    println("$cKClassSimpleName cParam ${RCLBufferPrimitiveType.USHORT} other index : $cIndex, buffCount : $cBuffCount")
                                                 }
                                             }
                                             else -> {
@@ -176,26 +235,39 @@ class RCLMessageSerialization {
                                     }
                                 }
 
+                                /**
+                                 * Level : C
+                                 * ClassType : cKClass
+                                 * calling cKConstructor when building cArgs has been completed.
+                                 */
                                 if (cArgs.size == cParameters.size) {
                                     val cInstance : Any = cKConstructor.call(*cArgs.toTypedArray())
-                                    println("$cKClazzName cInstance : $cInstance")
-                                    println("$cKClazzName cInstanceJson : $cInstanceJson")
+                                    println("$cKClassSimpleName cInstance : $cInstance")
+
+                                    cInstanceJson.add(paramName, gson.toJsonTree(cInstance))
+
+                                    println("$cKClassSimpleName instanceJson : $instanceJson")
+                                    println("$cKClassSimpleName cInstanceJson : $cInstanceJson")
                                     args.add(cInstance)
                                 }
                             }
-                            println("$cKClazzName cArgs : $cArgs")
+                            println("$cKClassSimpleName cArgs : $cArgs")
                         } else {
 
                         }
                     } else {
 
                     }
-                    println("$clazzName args : $args")
+                    println("$kClassSimpleName args : $args")
                 }
-
-                if(args.size == parameters.size) {
-                    val instance : M = constructor.call(*args.toTypedArray())
-                    println("$clazzName instance : $instance")
+                /**
+                 * Level : B
+                 * ClassType : kClass
+                 * calling cKConstructor when building cArgs has been completed.
+                 */
+                if(args.size == kParameters.size) {
+                    val instance : M = kConstructor.call(*args.toTypedArray())
+                    println("$kClassSimpleName instance : $instance")
 
                     return instance
                 }
@@ -207,7 +279,6 @@ class RCLMessageSerialization {
     }
 
     fun buildInstance(paramKey : String, instance : Any) : String {
-        val gson : Gson = Gson()
         val instanceJsonObject : JsonObject = JsonObject()
         instanceJsonObject.add(paramKey, gson.toJsonTree(instance))
 
