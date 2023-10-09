@@ -1,7 +1,7 @@
 # rclkotlin (ROS Client Library for Kotlin)
 
 ## Document
-- [rclkotlin - ROS Client Library for Kotlin](#rclkotlin)
+- [rclkotlin - ROS Client Library for Kotlin](#rclkotlin-ros-client-library-for-kotlin)
     - [Document](#document)
     - [Environment](#1-environment)
     - [SetUp Installation](#2-setup-installation)
@@ -23,10 +23,10 @@
 
 ## 1. Environment
 * <img src="https://img.shields.io/badge/openjdk17-437291?style=for-the-badge&logo=openjdk&logoColor=white">
-* <img src="https://img.shields.io/badge/kotlin-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white">
-* <img src="https://img.shields.io/badge/gradle-02303A?style=for-the-badge&logo=gradle&logoColor=white">
+* <img src="https://img.shields.io/badge/kotlin 1.9-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white">
+* <img src="https://img.shields.io/badge/gradle 8.2.1-02303A?style=for-the-badge&logo=gradle&logoColor=white">
 * <img src="https://img.shields.io/badge/io.github.pinorobotics:rtpstalk:4.0-02303A?style=for-the-badge&logo=gradle&logoColor=white">
-* <img src="https://img.shields.io/badge/ubuntu-E95420?style=for-the-badge&logo=ubuntu&logoColor=white">
+* <img src="https://img.shields.io/badge/ubuntu 20.04-E95420?style=for-the-badge&logo=ubuntu&logoColor=white">
 
 ## 2. SetUp Installation
 
@@ -143,12 +143,12 @@ gradle -v
 ### 3-1. Clone Project
 ```bash
 cd ${your workspace}/src
-git clone https://github.com/reidlo5135/uvc_manufacture_server.git
+git clone https://github.com/reidlo5135/rclkotlin.git
 ```
 
 ## 3-2. Build Project
 ```bash
-cd ${your workspace}/src/uvc_manufacture_server
+cd ${your workspace}/src/rclkotlin
 
 ./gradlew clean build
 # Starting a Gradle Daemon (subsequent builds will be faster)
