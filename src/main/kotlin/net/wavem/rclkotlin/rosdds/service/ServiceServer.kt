@@ -1,10 +1,10 @@
-package net.wavem.rclkotlin.rosdds.topic
+package net.wavem.rclkotlin.rosdds.service
 
 import id.jrosmessages.Message
 import net.wavem.rclkotlin.rosdds.infra.DDSQoS
+import net.wavem.rclkotlin.rosdds.infra.DDSSupport
 import java.util.concurrent.Flow.Subscriber
 import java.util.concurrent.Flow.Subscription
-import net.wavem.rclkotlin.rosdds.infra.DDSSupport
 import pinorobotics.rtpstalk.RtpsTalkClient
 import pinorobotics.rtpstalk.RtpsTalkConfiguration
 import pinorobotics.rtpstalk.messages.RtpsTalkDataMessage
@@ -12,32 +12,30 @@ import rx.Observable
 import rx.subjects.PublishSubject
 import kotlin.reflect.KClass
 
-class RCLSubscription<M : Message>(
-    private val messageType : KClass<M>
-) {
-    private val ddsClient : RtpsTalkClient = RtpsTalkClient(
+class ServiceServer {
+    val ddsClient : RtpsTalkClient = RtpsTalkClient(
         RtpsTalkConfiguration.Builder()
             .networkInterface(DDSSupport.DDS_NETWORK_INTERFACE_TYPE)
             .build()
     )
 
-    private val ddsSupport : DDSSupport = DDSSupport()
-    private val dataObservable : PublishSubject<ByteArray> = PublishSubject.create()
+    val ddsSupport : DDSSupport = DDSSupport()
+    val dataObservable : PublishSubject<ByteArray> = PublishSubject.create()
 
     fun getDataObservable() : Observable<ByteArray> {
         return dataObservable
     }
 
-    internal fun registerSubscription(topic : String) {
-        val ddsTopic : String = ddsSupport.qualifyTopic(topic)
-        val ddsMessageType : String = ddsSupport.qualifyMessageType(messageType)
+    inline fun <reified M : Message> registerServiceServer(serviceName : String) {
+        val ddsTopic : String = ddsSupport.qualifyServiceName(serviceName, M::class)
+        val ddsMessageType : String = ddsSupport.qualifyServiceType(M::class)
 
         ddsClient.subscribe(ddsTopic, ddsMessageType, DDSQoS.DEFAULT_SUBSCRIBER_QOS, object : Subscriber<RtpsTalkDataMessage> {
             private lateinit var subscription : Subscription
 
             override fun onSubscribe(subscription : Subscription) {
                 this.subscription = subscription
-                println("$ddsTopic subscription registered")
+                println("$ddsTopic service server registered")
                 subscription.request(1)
             }
 

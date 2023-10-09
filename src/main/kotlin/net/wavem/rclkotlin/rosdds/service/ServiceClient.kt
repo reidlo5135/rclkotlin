@@ -14,21 +14,19 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.SubmissionPublisher
 import kotlin.reflect.KClass
 
-class RCLServiceClient<M : Message>(
-    private val serviceType : KClass<M>
-) {
-    private val ddsClient : RtpsTalkClient = RtpsTalkClient(
+class ServiceClient {
+    val ddsClient : RtpsTalkClient = RtpsTalkClient(
         RtpsTalkConfiguration.Builder()
             .networkInterface(DDSSupport.DDS_NETWORK_INTERFACE_TYPE)
             .build()
     )
 
-    private val ddsSupport : DDSSupport = DDSSupport()
-    private val ddsPublisher : SubmissionPublisher<RtpsTalkDataMessage> = SubmissionPublisher<RtpsTalkDataMessage>()
+    val ddsSupport : DDSSupport = DDSSupport()
+    val ddsPublisher : SubmissionPublisher<RtpsTalkDataMessage> = SubmissionPublisher<RtpsTalkDataMessage>()
 
-    fun registerServiceClient(serviceName : String) {
-        val ddsTopic : String = ddsSupport.qualifyServiceName(serviceName, serviceType)
-        val ddsMessageType : String = ddsSupport.qualifyServiceType(serviceType)
+    inline fun <reified M : Message> registerServiceClient(serviceName : String) {
+        val ddsTopic : String = ddsSupport.qualifyServiceName(serviceName, M::class)
+        val ddsMessageType : String = ddsSupport.qualifyServiceType(M::class)
 
         println("ddsServiceName : $ddsTopic")
         println("ddsMessageType : $ddsMessageType")

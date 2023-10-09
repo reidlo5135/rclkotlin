@@ -1,47 +1,49 @@
 package net.wavem.rclkotlin.rosdds
 
 import id.jrosmessages.Message
-import net.wavem.rclkotlin.rosdds.service.RCLServiceClient
-import net.wavem.rclkotlin.rosdds.service.RCLServiceServer
-import net.wavem.rclkotlin.rosdds.topic.RCLPublisher
-import net.wavem.rclkotlin.rosdds.topic.RCLSubscription
+import net.wavem.rclkotlin.rosdds.service.ServiceClient
+import net.wavem.rclkotlin.rosdds.service.ServiceServer
+import net.wavem.rclkotlin.rosdds.topic.Publisher
+import net.wavem.rclkotlin.rosdds.topic.Subscription
 import kotlin.reflect.KClass
 
 
 open class RCLKotlin {
-    fun <M : Message> createPublisher(topic : String, messageType : KClass<M>) : RCLPublisher<M> {
-        val rclPublisher : RCLPublisher<M> = RCLPublisher(messageType)
-        rclPublisher.registerPublisher(topic)
+    companion object {
+        inline fun <reified M : Message> createPublisher(topic : String) : Publisher {
+            val publisher : Publisher = Publisher()
+            publisher.registerPublisher<M>(topic)
 
-        println("$topic publisher created")
+            println("$topic publisher created")
 
-        return rclPublisher
-    }
+            return publisher
+        }
 
-    fun <M : Message> createSubscription(topic : String, messageType : KClass<M>) : RCLSubscription<M> {
-        val rclSubscription : RCLSubscription<M> = RCLSubscription(messageType)
-        rclSubscription.registerSubscription(topic)
+        inline fun <reified M : Message> createSubscription(topic : String) : Subscription {
+            val subscription : Subscription = Subscription()
+            subscription.registerSubscription<M>(topic)
 
-        println("$topic subscription created")
+            println("$topic subscription created")
 
-        return rclSubscription
-    }
+            return subscription
+        }
 
-    fun <M : Message> createServiceClient(serviceName : String, serviceType : KClass<M>) : RCLServiceClient<M> {
-        val rclServiceClient : RCLServiceClient<M> = RCLServiceClient(serviceType)
-        rclServiceClient.registerServiceClient(serviceName)
+        inline fun <reified M : Message> createServiceClient(serviceName : String) : ServiceClient {
+            val serviceClient : ServiceClient = ServiceClient()
+            serviceClient.registerServiceClient<M>(serviceName)
 
-        println("$serviceName client created")
+            println("$serviceName client created")
 
-        return rclServiceClient
-    }
+            return serviceClient
+        }
 
-    fun <M : Message> createServiceServer(serviceName : String, serviceType : KClass<M>) : RCLServiceServer<M> {
-        val rclServiceServer : RCLServiceServer<M> = RCLServiceServer(serviceType)
-        rclServiceServer.registerServiceServer(serviceName)
+        inline fun <reified M : Message> createServiceServer(serviceName : String) : ServiceServer {
+            val serviceServer : ServiceServer = ServiceServer()
+            serviceServer.registerServiceServer<M>(serviceName)
 
-        println("$serviceName server created")
+            println("$serviceName server created")
 
-        return rclServiceServer
+            return serviceServer
+        }
     }
 }
