@@ -1,14 +1,12 @@
 package net.wavem.rclkotlin.rosdds
 
-import id.jros2messages.MessageSerializationUtils
 import net.wavem.rclkotlin.rosdds.service.ServiceClient
-import net.wavem.rclkotlin.rosdds.service.ServiceServer
 import net.wavem.rclkotlin.rosdds.topic.Publisher
 import net.wavem.rclkotlin.rosdds.topic.Subscription
 import net.wavem.rclkotlin.rosidl.infra.RCLMessageSerialization
 import net.wavem.rclkotlin.rosidl.message.example_interfaces.AddTwoIntsRequest
-import net.wavem.rclkotlin.rosidl.message.example_interfaces.AddTwoIntsResponse
 import net.wavem.rclkotlin.rosidl.message.sensor_msgs.NavSatFix
+
 
 class RCLKotlinTest {
     fun publishingTest() {
@@ -24,16 +22,16 @@ class RCLKotlinTest {
     }
 
     fun subscriptionTest() {
-//        val topic : String = "/chatter"
-//        val rclSubscription : Subscription = RCLKotlin.createSubscription<net.wavem.rclkotlin.rosidl.message.std_msgs.String>(topic)
-//
-//        rclSubscription.getDataObservable().subscribe { it ->
-//            if (it != null) {
-//                val d : RCLMessageSerialization = RCLMessageSerialization()
-//                val callback : net.wavem.rclkotlin.rosidl.message.std_msgs.String? = d.read(it)
-//                println("$topic callback : $callback")
-//            }
-//        }
+        val topic : String = "/chatter"
+        val rclSubscription : Subscription = RCLKotlin.createSubscription<net.wavem.rclkotlin.rosidl.message.std_msgs.String>(topic)
+
+        rclSubscription.getDataObservable().subscribe { it ->
+            if (it != null) {
+                val d : RCLMessageSerialization = RCLMessageSerialization()
+                val callback : net.wavem.rclkotlin.rosidl.message.std_msgs.String? = d.read(it)
+                println("$topic callback : $callback")
+            }
+        }
 
         val gpsTopic : String = "/gps/fix"
         val rclGpsSubscription : Subscription = RCLKotlin.createSubscription<NavSatFix>(gpsTopic)
@@ -60,26 +58,22 @@ class RCLKotlinTest {
     }
 
     fun serviceResponseTest() {
-        val serializationUtils = MessageSerializationUtils()
-        val serviceName : String = "/add_two_intsResponse"
-        val server : ServiceServer = RCLKotlin.createServiceServer<AddTwoIntsResponse>(serviceName)
-        server.getDataObservable().subscribe {it ->
-            if (it != null) {
+//        val serializationUtils = MessageSerializationUtils()
+//        val serviceName : String = "/add_two_intsResponse"
+//        val server : ServiceServer = RCLKotlin.createServiceServer<AddTwoIntsResponse>(serviceName)
+//        server.getDataObservable().subscribe {it ->
+//            if (it != null) {
 //                val response : AddTwoIntsResponse = AddTwoIntsResponse.read(it)
 //                println("$serviceName resposne : $response")
-            }
-        }
-
+//            }
+//        }
     }
 }
 
 fun main(args : Array<String>) {
     val rclKotlinTest : RCLKotlinTest = RCLKotlinTest()
-//    publishingTest()
+//    rclKotlinTest.publishingTest()
     rclKotlinTest.subscriptionTest()
 
     val d : RCLMessageSerialization = RCLMessageSerialization()
-//    d.read<Header>(byteArrayOf(0))
-//    serviceRequestTest()
-//    rclKotlinTest.serviceResponseTest()
 }

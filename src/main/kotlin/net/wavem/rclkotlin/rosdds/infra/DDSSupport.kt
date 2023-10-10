@@ -1,9 +1,65 @@
 package net.wavem.rclkotlin.rosdds.infra
 
 import id.jrosmessages.Message
+import pinorobotics.rtpstalk.RtpsTalkClient
+import pinorobotics.rtpstalk.RtpsTalkConfiguration
+import java.net.InetAddress
+import java.net.NetworkInterface
+import java.net.SocketException
+import java.util.*
 import kotlin.reflect.KClass
 
 class DDSSupport {
+
+    fun createDDSClient() : RtpsTalkClient {
+        var ddsClient : RtpsTalkClient? = null
+        val ddsHostName : String? = this.getNetworkInterfaceName()
+
+        if (ddsHostName != null) {
+            println("DDS network host name : $ddsHostName ")
+            ddsClient = RtpsTalkClient(
+                RtpsTalkConfiguration.Builder()
+                    .networkInterface(ddsHostName)
+                    .build()
+            )
+            return ddsClient
+        } else throw java.lang.RuntimeException("DDS network domain address is null")
+    }
+
+    private fun extractDDSDomain(ni : NetworkInterface) : String? {
+        val addresses: Enumeration<InetAddress> = ni.inetAddresses
+        var niName : String = ""
+
+        while (addresses.hasMoreElements()) {
+            val address = addresses.nextElement()
+            if (address.hostAddress.startsWith("192.168")) {
+                niName = ni.name
+                println("niName : $niName")
+            }
+        }
+        return if (niName != "") {
+            niName
+        } else null
+    }
+
+    private fun getNetworkInterfaceName() : String? {
+        var networkInterfaces : Enumeration<NetworkInterface?>? = null
+        var niName : String? = null
+
+        try {
+            networkInterfaces = NetworkInterface.getNetworkInterfaces()
+            while (networkInterfaces.hasMoreElements()) {
+                niName = extractDDSDomain(networkInterfaces.nextElement()!!)
+                if (niName != null) break
+            }
+            return niName
+        } catch (e : SocketException) {
+            e.printStackTrace()
+        }
+
+        return null
+    }
+
     fun qualifyTopic(topic : String) : String {
         var ddsQualifiedTopic : String = ""
 
@@ -80,7 +136,8 @@ class DDSSupport {
 
 
     companion object {
-        const val DDS_NETWORK_INTERFACE_TYPE : String = "lo"
+        const val DDS_NETWORK_LOCALHOST : String = "lo"
+        const val DDS_NETWORK_ETH3 : String = "et3"
         const val DDS_TOPIC_FORMAT : String = "rt"
         const val DDS_SERVICE_REQUEST_FORMAT : String = "rq"
         const val DDS_SERVICE_RESPONSE_FORMAT : String = "rr"

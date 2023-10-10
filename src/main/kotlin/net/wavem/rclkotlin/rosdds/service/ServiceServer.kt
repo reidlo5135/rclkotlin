@@ -10,16 +10,10 @@ import pinorobotics.rtpstalk.RtpsTalkConfiguration
 import pinorobotics.rtpstalk.messages.RtpsTalkDataMessage
 import rx.Observable
 import rx.subjects.PublishSubject
-import kotlin.reflect.KClass
 
 class ServiceServer {
-    val ddsClient : RtpsTalkClient = RtpsTalkClient(
-        RtpsTalkConfiguration.Builder()
-            .networkInterface(DDSSupport.DDS_NETWORK_INTERFACE_TYPE)
-            .build()
-    )
-
     val ddsSupport : DDSSupport = DDSSupport()
+    var ddsClient : RtpsTalkClient = ddsSupport.createDDSClient()
     val dataObservable : PublishSubject<ByteArray> = PublishSubject.create()
 
     fun getDataObservable() : Observable<ByteArray> {

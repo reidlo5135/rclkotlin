@@ -6,19 +6,13 @@ import java.util.concurrent.Flow.Subscriber
 import java.util.concurrent.Flow.Subscription
 import net.wavem.rclkotlin.rosdds.infra.DDSSupport
 import pinorobotics.rtpstalk.RtpsTalkClient
-import pinorobotics.rtpstalk.RtpsTalkConfiguration
 import pinorobotics.rtpstalk.messages.RtpsTalkDataMessage
 import rx.Observable
 import rx.subjects.PublishSubject
 
 class Subscription {
-    val ddsClient : RtpsTalkClient = RtpsTalkClient(
-        RtpsTalkConfiguration.Builder()
-            .networkInterface(DDSSupport.DDS_NETWORK_INTERFACE_TYPE)
-            .build()
-    )
-
     val ddsSupport : DDSSupport = DDSSupport()
+    var ddsClient : RtpsTalkClient = ddsSupport.createDDSClient()
     val dataObservable : PublishSubject<ByteArray> = PublishSubject.create()
 
     fun getDataObservable() : Observable<ByteArray> {

@@ -6,22 +6,15 @@ import net.wavem.rclkotlin.rosdds.infra.DDSQoS
 import net.wavem.rclkotlin.rosdds.infra.DDSSupport
 import net.wavem.rclkotlin.rosidl.message.example_interfaces.AddTwoIntsRequest
 import pinorobotics.rtpstalk.RtpsTalkClient
-import pinorobotics.rtpstalk.RtpsTalkConfiguration
 import pinorobotics.rtpstalk.messages.Parameters
 import pinorobotics.rtpstalk.messages.RtpsTalkDataMessage
 import java.nio.ByteBuffer
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.SubmissionPublisher
-import kotlin.reflect.KClass
 
 class ServiceClient {
-    val ddsClient : RtpsTalkClient = RtpsTalkClient(
-        RtpsTalkConfiguration.Builder()
-            .networkInterface(DDSSupport.DDS_NETWORK_INTERFACE_TYPE)
-            .build()
-    )
-
     val ddsSupport : DDSSupport = DDSSupport()
+    var ddsClient : RtpsTalkClient = ddsSupport.createDDSClient()
     val ddsPublisher : SubmissionPublisher<RtpsTalkDataMessage> = SubmissionPublisher<RtpsTalkDataMessage>()
 
     inline fun <reified M : Message> registerServiceClient(serviceName : String) {
@@ -36,7 +29,7 @@ class ServiceClient {
 
     fun requestToServiceServer(requestParams : Parameters?, requestMessageBytes : ByteArray) {
         val buf : ByteBuffer = ByteBuffer.allocate(16)
-        buf.put(ddsClient.configuration.guidPrefix())
+//        buf.put(ddsClient.configuration.guidPrefix())
         buf.putInt(0)
 
         val params : Parameters = Parameters(
