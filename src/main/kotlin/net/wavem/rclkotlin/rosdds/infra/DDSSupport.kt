@@ -34,8 +34,13 @@ class DDSSupport {
             val address = addresses.nextElement()
             if (address.hostAddress.startsWith("192.168")) {
                 niName = ni.name
-                println("niName : $niName")
-            }
+                println("DDS will support with : $niName")
+                break
+            } else if (address.hostAddress.startsWith("127.")) {
+                println("DDS will support with localhost")
+                niName = DDS_NETWORK_LOCALHOST
+                break
+            } else break
         }
         return if (niName != "") {
             niName
@@ -50,7 +55,9 @@ class DDSSupport {
             networkInterfaces = NetworkInterface.getNetworkInterfaces()
             while (networkInterfaces.hasMoreElements()) {
                 niName = extractDDSDomain(networkInterfaces.nextElement()!!)
-                if (niName != null) break
+                if (niName == null) {
+
+                }
             }
             return niName
         } catch (e : SocketException) {
@@ -83,7 +90,7 @@ class DDSSupport {
 
         val ddsQualifiedMessageType : String = "$rclMessageTypePackage$DDS_MESSAGE_TYPE_FORMAT$rclMessageTypeClassName"
 
-        print("qualifyMessage : $ddsQualifiedMessageType")
+        println("qualifyMessage : $ddsQualifiedMessageType")
 
         return ddsQualifiedMessageType
     }
