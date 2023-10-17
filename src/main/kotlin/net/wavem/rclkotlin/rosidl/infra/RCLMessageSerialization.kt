@@ -2,6 +2,7 @@ package net.wavem.rclkotlin.rosidl.infra
 
 import com.google.gson.Gson
 import com.google.gson.JsonObject
+import id.jros2client.impl.rmw.DdsNameMapper
 import id.jrosmessages.Message
 import net.wavem.rclkotlin.rosidl.application.RCLBufferReadingService
 import net.wavem.rclkotlin.rosidl.domain.RCLBufferPrimitiveType
@@ -37,6 +38,7 @@ class RCLMessageSerialization {
             buf.order(ByteOrder.LITTLE_ENDIAN)
 
             val instanceJson : JsonObject = JsonObject()
+            var buffCount : Int = 0
 
             /**
              * Level : B
@@ -256,7 +258,16 @@ class RCLMessageSerialization {
 
                         }
                     } else {
-
+                        when (rclBufferPrimitiveType) {
+                            RCLBufferPrimitiveType.STRING -> {
+                                println("$kClassSimpleName cParam ${RCLBufferPrimitiveType.STRING} first index : $index, buffCount : $buffCount")
+                                val str : String = this.readParameters(kParameters, index, data, buffCount).toString()
+                                val strSize : Int = str.toByteArray(Charsets.UTF_8).size
+                                println("$kClassSimpleName cParam ${RCLBufferPrimitiveType.STRING} str : $str, len : $strSize")
+                                args.add(str)
+                            }
+                            else -> {}
+                        }
                     }
                     println("$kClassSimpleName args : $args")
                 }
